@@ -1,0 +1,10 @@
+services:
+  zapusk-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zapusk-frontend
+    container_name: zapusk-frontend-compose
+    ports:
+      - "8080:80"
+    restart: always

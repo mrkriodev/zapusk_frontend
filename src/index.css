@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+
+@keyframes arrowDown {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(12px);
+  }
+}
+
+.animate-arrow-down {
+  animation: arrowDown 1.5s ease-in-out infinite;
+}
