@@ -114,18 +114,21 @@ export default function Home(){
                         key="main"
                         className="relative z-10 min-h-screen  text-white"
                         initial={{
-                        opacity: 0,
-                        scale: 0.9,
-                        filter: "blur(20px)",
+                            opacity: 0,
+                            scale: 1.04,
+                            y: 20,
+                            filter: "blur(20px) brightness(0.4)",
                         }}
                         animate={{
-                        opacity: 1,
-                        scale: 1,
-                        filter: "blur(0px)",
+                            opacity: 1,
+                            scale: 1,
+                            y: 0,
+                            filter: "blur(0px) brightness(1)",
                         }}
                         transition={{
-                        duration: 0.2,
-                        ease: "easeOut",
+                            duration: 1.1,
+                            ease: [0.22, 1, 0.36, 1],
+                            delay: 0.05,
                         }}
                     >
 
