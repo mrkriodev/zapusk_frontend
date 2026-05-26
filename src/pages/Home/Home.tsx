@@ -25,16 +25,28 @@ export default function Home(){
                     <motion.section
                         key="intro"
                         className="origin-[50%_85%] bg-black"
-                        initial={{ opacity: 1, scale: 1 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial={{ 
+                            opacity: 1, 
+                            scale: 1, 
+                            rotate: 0,
+                            y: 0,
+                        }}
+                        animate={{ 
+                            opacity: 1, 
+                            scale: 1, 
+                            rotate: 0,
+                            y: 0,
+                        }}
                         exit={{
                             opacity: 0,
                             scale: 7,
+                            rotate: 35,
+                            y: -120,
                             filter: "blur(10px)",
                         }}
                         transition={{
-                            duration: 1,
-                            ease: "easeInOut",
+                            duration: 0.9,
+                            ease: [0.76, 0, 0.24, 1],
                         }}
                     >
 
@@ -84,6 +96,7 @@ export default function Home(){
                                         delay: i * 0.035,
                                         ease: "easeOut",
                                         },
+                            
                                     }}
                                     >
                                     {char === " " ? "\u00A0" : char}
@@ -99,11 +112,11 @@ export default function Home(){
                     
                     <motion.main
                         key="main"
-                        className="relative z-10 min-h-screen bg-slate-950 text-white"
+                        className="relative z-10 min-h-screen  text-white"
                         initial={{
                         opacity: 0,
-                        scale: 0.98,
-                        filter: "blur(8px)",
+                        scale: 0.9,
+                        filter: "blur(20px)",
                         }}
                         animate={{
                         opacity: 1,
@@ -111,7 +124,7 @@ export default function Home(){
                         filter: "blur(0px)",
                         }}
                         transition={{
-                        duration: 1.2,
+                        duration: 0.2,
                         ease: "easeOut",
                         }}
                     >

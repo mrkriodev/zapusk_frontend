@@ -43,7 +43,7 @@ export default function Creating(){
     
 
     return(
-        <div className="pt-16 h-screen flex flex-col overflow-hidden p-2 bg-linear-to-br from-blue-950 via-indigo-950 to-blue-950">
+        <div className="pt-16 h-screen flex flex-col overflow-hidden p-2 bg-linear-to-br bg-[linear-gradient(160deg,_#020617_0%,_#06111f_45%,_#0b1f3a_75%,_#0f2a5f_100%)] ">
             <div className="w-full flex flex-col flex-1 min-h-0 z-10 ">
 
                 <div className="text-center text-white items-center justify-center flex flex-col mt-6">
@@ -74,7 +74,7 @@ export default function Creating(){
                         </ul>
                     </div>
 
-                    <div className="flex flex-col min-h-full rounded-2xl border-2 justify-between border-blue-400/20">
+                    <div className="flex flex-col min-h-full rounded-2xl border-2 justify-between bg-slate-950 border-blue-400/20">
                         <ul className="border-blue-500 flex-11/12 p-4">
 
                             {messages.map((message) => (
@@ -102,7 +102,6 @@ export default function Creating(){
 
                         </div>
                     </div>
-
 
                 </div>
 
