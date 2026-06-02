@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     image: zapusk-frontend
     container_name: zapusk-frontend-compose
+    volumes:
+      - ./html/:/tmp:rw
     ports:
       - "8080:80"
     restart: always
