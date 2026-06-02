@@ -13,9 +13,9 @@ trap 'error_handler $LINENO' ERR
 
 
 #echo "Обновляем репозиторий..."
-git pull
-git fetch --all
-git reset --hard origin/main
+#git pull
+#git fetch --all
+#git reset --hard origin/main
 
 echo "Останавливаем и удаляем старые контейнеры и образы..."
 docker compose down --rmi all
@@ -27,7 +27,8 @@ echo "Запускаем контейнеры в фоне..."
 docker compose up -d
 
 echo "Перемещаем содержимое nginx html..."
-docker compose exec frontend sh -c "mv /usr/share/nginx/html/* /tmp/"
+#docker compose exec frontend sh -c "mv /usr/share/nginx/html/* /tmp/"
+docker compose exec zapusk-frontend sh -c "mv /usr/share/nginx/html/* /tmp/"
 
 echo "Останавливаем контейнер..."
 docker compose down --rmi all
