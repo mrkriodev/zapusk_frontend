@@ -1,0 +1,36 @@
+name: Build and Deploy to Server
+
+on:
+  push:
+    branches: [ "main" ]
+env:
+  DEPLOY_PATH: ${{ vars.APP_PATH_PROD }}     # Базовый путь на сервере (можно и в secrets)
+
+jobs:
+  deploy:
+    name: Building and deploying on server
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: SSH debug
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: echo "SSH OK"
+        debug: true
+   
+    - uses: actions/checkout@v4
+    
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.SSH_HOST }}            # Сервер для деплоя
+        username: ${{ secrets.SSH_USERNAME }}    # github-deploy
+        key: ${{ secrets.SSH_PRIVATE_KEY }}      # Приватный ключ
+        port: 22                                 # Порт SSH
+        script: |
+          cd ${{ vars.APP_PATH_PROD }}
+          git pull
+          ./update.sh
