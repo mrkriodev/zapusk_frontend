@@ -1,7 +1,7 @@
-import GlobeHero from "./GlobeHero";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import Creating from "../Creating/Creating";
+import MyGlobeHero from "./GlobeComponents/MyGlobeHero";
 
 export default function Home(){
 
@@ -24,7 +24,7 @@ export default function Home(){
                 {showIntro ? (
                     <motion.section
                         key="intro"
-                        className="origin-[50%_85%] bg-black"
+                        className="origin-center bg-black"
                         initial={{ 
                             opacity: 1, 
                             scale: 1, 
@@ -41,7 +41,6 @@ export default function Home(){
                             opacity: 0,
                             scale: 7,
                             rotate: 35,
-                            y: -120,
                             filter: "blur(10px)",
                         }}
                         transition={{
@@ -63,9 +62,9 @@ export default function Home(){
                         <div className="relative z-10 container min-w-full flex 
                         flex-col overflow-hidden items-center min-h-screen ">
 
-                            <GlobeHero />
+                            <MyGlobeHero />
 
-                            <div className="flex-1 flex flex-col items-center z-20 justify-center -translate-y-24">
+                            <div className="flex-1 flex flex-col items-center z-20 justify-center -translate-y-24 pointer-events-none">
                                 
                                 <h1 className="text-white/85 text-5xl font-bold  mb-7">Zapusk</h1>
                             
@@ -96,7 +95,7 @@ export default function Home(){
                                         delay: i * 0.035,
                                         ease: "easeOut",
                                         },
-                            
+
                                     }}
                                     >
                                     {char === " " ? "\u00A0" : char}

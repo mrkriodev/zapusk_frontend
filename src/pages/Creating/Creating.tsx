@@ -75,14 +75,14 @@ export default function Creating(){
                     </div>
 
                     <div className="flex flex-col min-h-full rounded-2xl border-2 justify-between bg-slate-950 border-blue-400/20">
-                        <ul className="border-blue-500 flex-11/12 p-4">
+                        <ul className="border-blue-500 flex flex-col-reverse flex-11/12 p-4 overflow-scroll">
 
-                            {messages.map((message) => (
+                            {messages.slice().reverse().map((message) => (
                                 <MessageItem key={message.id} message={message} />
                             ))}
                         </ul>
 
-                        <div className="min-w-full rounded-b-2xl flex bg-blue-900/30 border-t p-3 border-blue-400/20 flex-1/12 gap-3">
+                        <div className="min-w-full rounded-b-2xl flex bg-blue-900/30 border-t p-3 border-blue-400/20 flex-1/12 gap-3 ">
 
                             <input type="text" 
                             value={input}
