@@ -53,8 +53,8 @@ export default function ThreePlanet() {
     const initialCameraPosition = camera.position.clone();
     const initialControlsTarget = controls.target.clone();
 
-    let isUserInteracting = false;
-    let shouldAutoRotate = true;
+    // let isUserInteracting = false;
+    // let shouldAutoRotate = true;
     let returnTimeout: number | null = null;
 
     let isReturning = false;
@@ -66,8 +66,8 @@ export default function ThreePlanet() {
     const returnDuration = 1.2;
 
     controls.addEventListener("start", () => {
-    isUserInteracting = true;
-    shouldAutoRotate = false;
+    // isUserInteracting = true;
+    // shouldAutoRotate = false;
     isReturning = false;
 
     if (returnTimeout !== null) {
@@ -77,7 +77,7 @@ export default function ThreePlanet() {
   });
 
   controls.addEventListener("end", () => {
-    isUserInteracting = false;
+    // isUserInteracting = false;
 
     returnTimeout = window.setTimeout(() => {
       returnStartPosition.copy(camera.position);
@@ -91,7 +91,7 @@ export default function ThreePlanet() {
     const textureLoader = new THREE.TextureLoader();
 
     const earthTexture = textureLoader.load("/textures/earth-night.jpg");
-    const bumpTexture = textureLoader.load("/textures/earth-bump.jpg");
+    const bumpTexture = textureLoader.load("/textures/earth-bump.png");
     const cloudsTexture = textureLoader.load("/textures/earth-clouds.png");
 
     const planetGeometry = new THREE.SphereGeometry(2, 64, 64);
@@ -207,7 +207,7 @@ export default function ThreePlanet() {
 
       if (t >= 1) {
         isReturning = false;
-        shouldAutoRotate = true;
+        // shouldAutoRotate = true;
       }
     } else {
       controls.update();
