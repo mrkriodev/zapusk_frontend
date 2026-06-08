@@ -5,7 +5,7 @@ export default function App() {
 
   return (
     <>
-      <div className="min-h-screen min-w-screen bg-black">
+      <div className="h-dvh min-w-screen bg-black">
         <AppRouter />
       </div>
     </>

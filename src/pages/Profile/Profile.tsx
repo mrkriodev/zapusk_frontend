@@ -11,7 +11,7 @@ const mockModels = [
 
 export default function Profile(){
     return(
-    <div className="min-h-screen pt-16 bg-linear-to-br from-blue-950 via-indigo-950 to-blue-950 h-screen overflow-hidden">
+    <div className="h-dvh pt-16 bg-linear-to-br from-blue-950 via-indigo-950 to-blue-950 overflow-hidden">
       
       <div className="container mx-auto lg:px-6 lg:pt-12 lg:pb-7 px-2 pt-4 h-full flex flex-col min-h-0">
         <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 backdrop-blur-md rounded-3xl border border-blue-400/30 lg:p-8 lg:mb-8 mb-1 p-4">

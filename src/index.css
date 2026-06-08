@@ -14,3 +14,15 @@
 .animate-arrow-down {
   animation: arrowDown 1.5s ease-in-out infinite;
 }
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #000000;
+  
+}
+
+body {
+  margin: 0;
+}

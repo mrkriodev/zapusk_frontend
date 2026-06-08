@@ -44,7 +44,7 @@ export default function Creating(){
     
 
     return(
-        <div className="h-dvh pt-16 flex flex-col overflow-hidden p-2 bg-linear-to-br bg-[linear-gradient(160deg,_#020617_0%,_#06111f_45%,_#0b1f3a_75%,_#0f2a5f_100%)] ">
+        <div className="h-dvh pt-16 flex flex-col overflow-hidden bg-amber-300 p-2 bg-linear-to-br bg-[linear-gradient(160deg,_#020617_0%,_#06111f_45%,_#0b1f3a_75%,_#0f2a5f_100%)] ">
             <div className=" flex flex-col flex-1 min-h-0 z-10 ">
 
                 <div className="text-center relative text-white items-center justify-center flex flex-row lg:mt-6 mt-2">
@@ -151,7 +151,7 @@ export default function Creating(){
                                 onChange={((e) => setInput(e.target.value))}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                                 className="lg:flex-8/10 flex-7/10 bg-blue-800/30 border border-blue-400/30 lg:rounded-3xl rounded-2xl lg:px-6 lg:py-4 px-4 py-2 text-white placeholder-blue-300/50 focus:outline-none 
-                                focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/20 text-sm"/>
+                                focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/20 text-base"/>
 
                                 <button 
                                 onClick={() => handleSend()}

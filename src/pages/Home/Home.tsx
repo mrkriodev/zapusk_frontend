@@ -17,7 +17,7 @@ export default function Home(){
 
 
     return(
-        <div className="min-h-screen  relative overflow-hidden">
+        <div className="h-dvh relative overflow-hidden">
 
             <AnimatePresence mode="wait">
 
