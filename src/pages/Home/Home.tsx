@@ -64,12 +64,12 @@ export default function Home(){
 
                             <MyGlobeHero />
 
-                            <div className="flex-1 flex flex-col items-center z-20 justify-center -translate-y-24 pointer-events-none">
+                            <div className="flex-1 flex flex-col items-center z-20 justify-center md:-translate-y-24  pointer-events-none">
                                 
-                                <h1 className="text-white/85 text-5xl font-bold  mb-7">Zapusk</h1>
+                                <h1 className="text-white/85 md:text-5xl text-4xl font-bold  md:mb-7 mb-4">Zapusk</h1>
                             
                                 <span
-                                className="text-indigo-200 text-3xl inline-block"
+                                className="text-indigo-200 md:text-3xl text-2xl inline-block"
                                 aria-label="From Prompt to Spaceship"
                                 >
                                 {Array.from("From Prompt to Spaceship").map((char, i) => (

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { createGlobeAtmosphereMaterial, createManyArcs, degreeToRad } from "./GlobeUtils";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -6,7 +6,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 export default function ThreePlanet() {
   const containerRef = useRef<HTMLDivElement | null>(null)
 
-  
+  const [isReady, setIsReady] = useState(false)
+  const [showLoader, setShowLoader] = useState(false)
 
   useEffect(() => {
     const container = containerRef.current
@@ -21,8 +22,23 @@ export default function ThreePlanet() {
       0.1,
       1000
     )
-    camera.position.set(0, 0.35, 7)
-    camera.lookAt(0, 0, 0)
+
+    const setCameraForScreen = () => {
+      const isMobile = window.innerWidth < 768
+
+      camera.fov = isMobile ? 60 : 45
+
+      camera.position.set(
+        0,
+        isMobile ? 0.25 : 0.35,
+        isMobile ? 9 : 7
+      )
+
+      camera.lookAt(0, -2, 0)
+      camera.updateProjectionMatrix()
+    }
+
+    setCameraForScreen()
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -33,6 +49,7 @@ export default function ThreePlanet() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     container.appendChild(renderer.domElement)
 
+    // контролы (для движения глобуса)
     const controls = new OrbitControls(camera, renderer.domElement);
 
     controls.target.set(0, -2, 0);
@@ -53,8 +70,6 @@ export default function ThreePlanet() {
     const initialCameraPosition = camera.position.clone();
     const initialControlsTarget = controls.target.clone();
 
-    // let isUserInteracting = false;
-    // let shouldAutoRotate = true;
     let returnTimeout: number | null = null;
 
     let isReturning = false;
@@ -66,8 +81,6 @@ export default function ThreePlanet() {
     const returnDuration = 1.2;
 
     controls.addEventListener("start", () => {
-    // isUserInteracting = true;
-    // shouldAutoRotate = false;
     isReturning = false;
 
     if (returnTimeout !== null) {
@@ -77,7 +90,6 @@ export default function ThreePlanet() {
   });
 
   controls.addEventListener("end", () => {
-    // isUserInteracting = false;
 
     returnTimeout = window.setTimeout(() => {
       returnStartPosition.copy(camera.position);
@@ -88,11 +100,34 @@ export default function ThreePlanet() {
     }, 2000);
   });
 
-    const textureLoader = new THREE.TextureLoader();
+    // загрузка текстур с флагом
+    const loaderDelay = window.setTimeout(() => {
+      setShowLoader(true);
+    }, 50);
 
-    const earthTexture = textureLoader.load("/textures/earth-night.jpg");
-    const bumpTexture = textureLoader.load("/textures/earth-bump.png");
-    const cloudsTexture = textureLoader.load("/textures/earth-clouds.png");
+    const loadingManager = new THREE.LoadingManager()
+
+    let texturesLoaded = false
+    let firstFrameRendered = false
+
+    const markReady = () => {
+      if (texturesLoaded && firstFrameRendered) {
+        window.clearTimeout(loaderDelay)
+        setIsReady(true)
+        setShowLoader(false)
+      }
+    }
+
+    loadingManager.onLoad = () => {
+      texturesLoaded = true
+      markReady()
+    }
+
+    const textureLoader = new THREE.TextureLoader(loadingManager)
+
+    const earthTexture = textureLoader.load("/textures/earth-night.jpg")
+    const bumpTexture = textureLoader.load("/textures/earth-bump.png")
+    const cloudsTexture = textureLoader.load("/textures/earth-clouds.png")
 
     const planetGeometry = new THREE.SphereGeometry(2, 64, 64);
     const planetMaterial = new THREE.MeshStandardMaterial({
@@ -160,7 +195,7 @@ export default function ThreePlanet() {
       const height = container.clientHeight;
 
       camera.aspect = width / height;
-      camera.updateProjectionMatrix();
+      setCameraForScreen()
 
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -214,8 +249,14 @@ export default function ThreePlanet() {
     }
 
       renderer.render(scene, camera);
+
+      if (!firstFrameRendered) {
+        firstFrameRendered = true
+        markReady()
+      }
+
       animationId = requestAnimationFrame(animate);
-    };
+    }
 
     animate();
 
@@ -250,9 +291,22 @@ export default function ThreePlanet() {
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-screen overflow-hidden absolute top-20"
-    />
+    <>
+      {showLoader && !isReady && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 text-blue-200">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-blue-400/30 border-t-blue-300" />
+            <p className="text-sm tracking-widest text-blue-200/70">
+              LOADING GLOBE
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div
+        ref={containerRef}
+        className="w-full h-screen overflow-hidden absolute top-20"
+      />
+    </>
   )
 }

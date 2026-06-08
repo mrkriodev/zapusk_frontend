@@ -13,13 +13,13 @@ export default function MessageItem({message} : MessageItemProps){
     className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
      >
         <div
-        className={`max-w-2xl rounded-2xl px-6 py-4 ${
+        className={`lg:max-w-2xl rounded-2xl lg:px-6 lg:py-4 px-4 py-2 max-w-[85%] ${
             message.isUser
-            ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white'
-            : 'bg-blue-800/50 backdrop-blur-sm text-blue-100 border border-blue-400/30'
+            ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white mb-2'
+            : 'bg-blue-800/50 backdrop-blur-sm text-blue-100 border border-blue-400/30 mb-3'
             }`}
         >
-        <p className="leading-relaxed">{message.text}</p>
+        <p className="leading-relaxed lg:text-md text-sm">{message.text}</p>
         {message.hasFile && (
             <button className="mt-4 flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 
             text-green-300 px-4 py-2 rounded-lg border border-green-400/30 transition-all">
