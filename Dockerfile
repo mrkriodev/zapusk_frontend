@@ -3,7 +3,7 @@ WORKDIR /app/frontend
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm install 
 
 COPY . .
 
@@ -12,10 +12,12 @@ ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build
 
-FROM nginx:alpine
+FROM alpine:3.20 AS deploy
 
-COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+WORKDIR /app/frontend
 
-EXPOSE 80
+COPY --from=builder /app/frontend/dist /app/frontend/dist
 
-CMD ["nginx", "-g", "daemon off;"]
+
+
+CMD ["sh", "-c", "rm -rf /deploy/* && cp -r /app/frontend/dist/. /deploy/ && echo 'Frontend deployed to /deploy'"]

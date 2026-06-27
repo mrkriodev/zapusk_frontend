@@ -7,6 +7,6 @@ services:
         VITE_API_URL: ${VITE_API_URL}
     image: zapusk-frontend
     container_name: zapusk-frontend-compose
-    ports:
-      - "8080:80"
-    restart: always
+    volumes:
+      - /html/zapusk.io:/deploy
+    restart: "no"
