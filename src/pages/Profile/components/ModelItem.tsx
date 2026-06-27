@@ -1,5 +1,5 @@
 import { Box, Calendar, Download } from "lucide-react";
-import type { ModelItemProps } from "../../../types/profileTypes";
+import type { ModelItemProps } from "../../../types/UITypes/profileTypes";
 
 
 export default function ModelItem({ model } : ModelItemProps){

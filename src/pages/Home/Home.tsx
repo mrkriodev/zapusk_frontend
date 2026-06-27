@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import Creating from "../Creating/Creating";
+import Creating from "./Creating/Creating";
 import MyGlobeHero from "./GlobeComponents/MyGlobeHero";
 
 export default function Home(){
@@ -10,7 +10,7 @@ export default function Home(){
     useEffect(() => {
         const timer = setTimeout(() => {
             setShowIntro(false)
-        }, 6000)
+        }, 1000)
 
         return () => {clearTimeout(timer)}
     }, [])
