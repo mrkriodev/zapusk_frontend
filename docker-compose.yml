@@ -3,10 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args: 
+      args:
         VITE_API_URL: ${VITE_API_URL}
     image: zapusk-frontend
     container_name: zapusk-frontend-compose
     volumes:
-      - /html/zapusk.io:/deploy
-    restart: "no"
+      - ./html/:/tmp:rw
+    ports:
+      - "8080:80"
+    restart: always
