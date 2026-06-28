@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     image: zapusk-frontend
     container_name: zapusk-frontend-compose
     volumes:
