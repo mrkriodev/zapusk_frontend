@@ -307,6 +307,6 @@ export default function Creating(){
                     onConfirm={handleCreateChat}
                 />
             )}
-        </div>
+        </div> 
     )
 }
