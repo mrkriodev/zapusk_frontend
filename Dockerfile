@@ -11,7 +11,7 @@ RUN npm run build
 
 FROM nginx:alpine
 
-COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html/zapusk.io
 
 EXPOSE 80
 

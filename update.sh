@@ -33,8 +33,13 @@ docker compose exec zapusk-frontend sh -c "mv /usr/share/nginx/html/* /tmp/"
 echo "Останавливаем контейнер..."
 docker compose down --rmi all
 
-echo "Синхронизируем файлы с nginx..."
-rsync -r --delete html/* ../../nginx/html/
+#echo "Синхронизируем файлы с nginx..."
+#rsync -r --delete html/* ../../nginx/html/
+
+echo "Синхронизируем файлы с nginx (zapusk.io)..."
+NGINX_SITE_DIR="$(cd "$(dirname "$0")/../../nginx/html/zapusk.io" && pwd)"
+mkdir -p "$NGINX_SITE_DIR"
+rsync -r --delete html/ "$NGINX_SITE_DIR/"
 
 echo "Перезапускаем nginx..."
 docker exec nginx bash -c "nginx -s reload"
