@@ -13,9 +13,9 @@ trap 'error_handler $LINENO' ERR
 
 
 #echo "Обновляем репозиторий..."
-#git pull
-#git fetch --all
-#git reset --hard origin/main
+git pull
+git fetch --all
+git reset --hard origin/main
 
 echo "Останавливаем и удаляем старые контейнеры и образы..."
 docker compose down --rmi all
