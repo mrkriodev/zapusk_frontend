@@ -6,7 +6,7 @@ export const baseApi = createApi({
 
   baseQuery: fetchBaseQuery({
     
-    baseUrl: import.meta.env.VITE_API_URL,
+    baseUrl: "https://zapusk.io/api",
     
     prepareHeaders: async (headers) => {
       const token = await tokenStorage.getToken();
