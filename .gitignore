@@ -451,3 +451,8 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+html/zapusk.io/*
+html/index.html
+html/50x.html
+
