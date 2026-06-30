@@ -10,7 +10,7 @@ export const conversationApi = baseApi.injectEndpoints({
         getConversations: builder.query<ConversationsResponse, PaginationParams | void>({
             query: (args) => {
 
-                const {limit = 50, offset = 20} = args ?? {}
+                const {limit = 50, offset = 0} = args ?? {}
 
                 return {
                     url: "/conversations",
@@ -43,7 +43,7 @@ export const conversationApi = baseApi.injectEndpoints({
 
         deleteConversation: builder.mutation<void, string>({
             query: (conversationId: string ) => ({
-                url: `/conversation/${conversationId}`,
+                url: `/conversations/${conversationId}`,
                 method: "DELETE",
             }),
             invalidatesTags: ["Conversations"]
@@ -51,7 +51,7 @@ export const conversationApi = baseApi.injectEndpoints({
 
         sendMessage: builder.mutation<JobAccepted, SendMessageArgs>({
             query: ({conversationId, text} : {conversationId: string, text: string}) => ({
-                url: `/conversation/${conversationId}`,
+                url: `/conversations/${conversationId}`,
                 method: "POST",
                 body: { text }
             }),
