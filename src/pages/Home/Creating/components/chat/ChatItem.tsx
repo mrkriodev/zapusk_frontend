@@ -3,7 +3,11 @@ import type { ChatItemProps } from "../../../../../types/UITypes/creatingTypes";
 
 export default function ChatItem({ item, activeChat, setActiveChat, onDeleteClick} : ChatItemProps){
 
-  const dateNorm = item.created_at
+  const dateNorm = new Date(item.created_at).toLocaleDateString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
 
     return (
       <li

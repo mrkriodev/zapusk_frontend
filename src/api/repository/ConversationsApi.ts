@@ -51,7 +51,7 @@ export const conversationApi = baseApi.injectEndpoints({
 
         sendMessage: builder.mutation<JobAccepted, SendMessageArgs>({
             query: ({conversationId, text} : {conversationId: string, text: string}) => ({
-                url: `/conversations/${conversationId}`,
+                url: `/conversations/${conversationId}/messages`,
                 method: "POST",
                 body: { text }
             }),
