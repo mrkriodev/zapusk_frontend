@@ -24,7 +24,7 @@ export default function Creating(){
             setActiveChat(chats[0].id)
         }
     }, [chats, activeChat])
-
+ 
     const [createConversation, ] = useCreateConversationMutation()
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
