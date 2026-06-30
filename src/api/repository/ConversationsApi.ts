@@ -34,7 +34,7 @@ export const conversationApi = baseApi.injectEndpoints({
 
         createConversation: builder.mutation<Conversation, CreateConversationRequest>({
             query: (body: {title: string | null}) => ({
-                url: "/conversation",
+                url: "/conversations",
                 method: "POST",
                 body,
             }),
