@@ -1,3 +1,5 @@
+import type { RefObject } from "react";
+
 type PartType = "case" | "holder" | "adapter" | "mount" | "decor" | "other" | ""
 
 type Material = "PLA" | "PETG" | "ABS" | "TPU" | "Resin" | "unknown" | ""
@@ -47,6 +49,14 @@ export type ChatItemProps = {
     activeChat: string | null
     setActiveChat: (e: string) => void
     onDeleteClick: () => void
+    onModelsClick: () => void
+}
+
+export type CadModel = {
+  id: string
+  name: string
+  size: string
+  time: string
 }
 
 // modal props
@@ -62,4 +72,10 @@ export type CreateModalProps = {
   onChange: (value: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
+}
+
+export type CadModalListProps = {
+  models: CadModel[]
+  onClose: () => void
+  popoverRef: RefObject<HTMLDivElement | null>
 }

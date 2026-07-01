@@ -1,7 +1,7 @@
-import { MessageSquare, X } from "lucide-react";
+import { Download, MessageSquare, X } from "lucide-react";
 import type { ChatItemProps } from "../../../../../types/UITypes/creatingTypes";
 
-export default function ChatItem({ item, activeChat, setActiveChat, onDeleteClick} : ChatItemProps){
+export default function ChatItem({ item, activeChat, setActiveChat, onDeleteClick, onModelsClick} : ChatItemProps){
 
   const dateNorm = new Date(item.created_at).toLocaleDateString("ru-RU", {
     day: "2-digit",
@@ -29,15 +29,31 @@ export default function ChatItem({ item, activeChat, setActiveChat, onDeleteClic
               <div className="text-blue-300 text-sm">{dateNorm}</div>
             </div>
           </div>
-          <button 
-          onClick={(e) => {
-              e.stopPropagation();
-              onDeleteClick()
-            }
-          }
-          className="shrink-0 text-blue-300 hover:text-red-400 group-hover:opacity-100 opacity-0">
-            <X className="w-5 h-5"/>
-          </button>
+          <div className="flex shrink-0 items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              onClick={(e) => {
+                  e.stopPropagation();
+                  onModelsClick()
+                }
+              }
+              className="text-blue-300 hover:text-purple-300 transition-colors"
+              aria-label="Показать сгенерированные модели"
+            >
+              <Download className="w-5 h-5"/>
+            </button>
+
+            <button 
+              onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteClick()
+                }
+              }
+              className="text-blue-300 hover:text-red-400 transition-colors"
+              aria-label="Удалить чат"
+            >
+              <X className="w-5 h-5"/>
+            </button>
+          </div>
         </div>
       </li>
     );

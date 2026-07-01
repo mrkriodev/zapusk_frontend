@@ -1,6 +1,6 @@
 import { Menu, Plus, Send, Sparkles, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import type { Chat } from "../../../types/UITypes/creatingTypes";
+import { useEffect, useState, useRef } from "react";
+import type { CadModel, Chat } from "../../../types/UITypes/creatingTypes";
 import ChatItem from "./components/chat/ChatItem";
 import MessageItem from "./components/chat/MessageItem";
 import DeleteModal from "./components/modals/DeleteModal";
@@ -8,6 +8,33 @@ import CreateModal from "./components/modals/CreateModal";
 import { useCreateConversationMutation, useDeleteConversationMutation, useGetConservationByIdQuery, useGetConversationsQuery, useSendMessageMutation } from "../../../api/repository/ConversationsApi";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useGetJobByIdQuery } from "../../../api/repository/JobsApi";
+import CadModalList from "./components/modals/CadModalList";
+
+const getMockCadModels = (chat: Chat): CadModel[] => {
+    const title = chat.title?.trim() || "Новый чат";
+    const version = chat.current_version ?? 1;
+
+    return [
+        {
+            id: `${chat.id}-stl-${version}`,
+            name: `${title} v${version}.stl`,
+            size: "2.4 MB",
+            time: "только что",
+        },
+        {
+            id: `${chat.id}-step-${version}`,
+            name: `${title} v${version}.step`,
+            size: "4.8 MB",
+            time: "2 мин назад",
+        },
+        {
+            id: `${chat.id}-preview-${version}`,
+            name: `${title} preview.obj`,
+            size: "1.1 MB",
+            time: "5 мин назад",
+        },
+    ];
+}
 
 
 export default function Creating(){
@@ -30,6 +57,8 @@ export default function Creating(){
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
     const [chatToDelete, setChatToDelete] = useState<Chat | null>(null);
+    const [modelsPopoverChatId, setModelsPopoverChatId] = useState<string | null>(null);
+    const modelsPopoverRef = useRef<HTMLDivElement | null>(null);
 
     const [deleteConversation, ] = useDeleteConversationMutation()
 
@@ -62,19 +91,46 @@ export default function Creating(){
     }
     
 
+    const MAX_JOB_POLL_REQUESTS = 15;
+
     const [activeJob, setActiveJob] = useState<{
-        jobId: string
-        conversationId: string
-    } | null>(null)
+        jobId: string;
+        conversationId: string;
+    } | null>(null);
+
+    const [jobPollCount, setJobPollCount] = useState(0);
+    const prevIsJobFetchingRef = useRef(false);
+
+    const canPollJob = Boolean(activeJob) && jobPollCount < MAX_JOB_POLL_REQUESTS;
 
     const {
         data: jobData,
-        
         error: jobError,
+        isFetching: isJobFetching,
     } = useGetJobByIdQuery(activeJob?.jobId ?? skipToken, {
-        pollingInterval: activeJob ? 2000 : 0,
+        pollingInterval: canPollJob ? 2000 : 0,
         skipPollingIfUnfocused: true,
-    })
+    });
+
+    useEffect(() => {
+        setJobPollCount(0);
+        prevIsJobFetchingRef.current = false;
+    }, [activeJob?.jobId]);
+
+    useEffect(() => {
+        if (isJobFetching && !prevIsJobFetchingRef.current) {
+            setJobPollCount((prev) => prev + 1);
+        }
+
+        prevIsJobFetchingRef.current = isJobFetching;
+    }, [isJobFetching]);
+
+    useEffect(() => {
+        if (!jobError) return
+
+        console.error("Ошибка polling job:", jobError)
+        setActiveJob(null)
+    }, [jobError])
 
     useEffect(() => {
         if (!jobData || !activeJob) return;
@@ -90,12 +146,17 @@ export default function Creating(){
         }
     }, [jobData, activeJob, activeChat, refetchConversation]);
 
-    useEffect(() => {
-        if (!jobError) return
 
-        console.error("Ошибка polling job:", jobError)
-        setActiveJob(null)
-    }, [jobError])
+    useEffect(() => {
+        if (!activeJob) return;
+
+        if (jobPollCount >= MAX_JOB_POLL_REQUESTS) {
+            console.error("Превышен лимит polling-запросов");
+
+            setActiveJob(null);
+            refetchConversation();
+        }
+    }, [jobPollCount, activeJob, refetchConversation]);
     
 
     const handleDeleteChat = async (chat: Chat) => {
@@ -104,6 +165,7 @@ export default function Creating(){
 
             setChatToDelete(null);
             setIsSidebarOpen(false);
+            setModelsPopoverChatId((current) => current === chat.id ? null : current);
 
             if (activeChat === chat.id) {
                 const nextChat = chats.find((item) => item.id !== chat.id);
@@ -142,7 +204,27 @@ export default function Creating(){
     const handleSelectChat = (chatId: string) => {
         setActiveChat(chatId)
         setIsSidebarOpen(false)
+        setModelsPopoverChatId(null)
     }
+
+    useEffect(() => {
+        if (!modelsPopoverChatId) return;
+
+        const handlePointerDown = (event: PointerEvent) => {
+            if (modelsPopoverRef.current?.contains(event.target as Node)) return;
+
+            setModelsPopoverChatId(null);
+        };
+
+        document.addEventListener("pointerdown", handlePointerDown);
+
+        return () => {
+            document.removeEventListener("pointerdown", handlePointerDown);
+        };
+    }, [modelsPopoverChatId]);
+
+    const modelsPopoverChat = chats.find((chat) => chat.id === modelsPopoverChatId);
+    const mockModels = modelsPopoverChat ? getMockCadModels(modelsPopoverChat) : [];
 
     return(
         <div className="h-dvh pt-16 flex flex-col overflow-hidden bg-amber-300 p-2 bg-linear-to-br bg-[linear-gradient(160deg,_#020617_0%,_#06111f_45%,_#0b1f3a_75%,_#0f2a5f_100%)] ">
@@ -219,6 +301,7 @@ export default function Creating(){
                                         activeChat={activeChat}
                                         setActiveChat={handleSelectChat}
                                         onDeleteClick={() => setChatToDelete(item)}
+                                        onModelsClick={() => setModelsPopoverChatId(item.id)}
                                     />
                                 )
                             })}
@@ -248,7 +331,14 @@ export default function Creating(){
 
                                 {chats.map((item) => {
                                     return(
-                                        <ChatItem key={item.id} item={item} activeChat={activeChat} setActiveChat={handleSelectChat} onDeleteClick={() => setChatToDelete(item)}/>
+                                        <ChatItem
+                                            key={item.id}
+                                            item={item}
+                                            activeChat={activeChat}
+                                            setActiveChat={handleSelectChat}
+                                            onDeleteClick={() => setChatToDelete(item)}
+                                            onModelsClick={() => setModelsPopoverChatId(item.id)}
+                                        />
                                     )
                                 })}
                             </ul>
@@ -305,6 +395,14 @@ export default function Creating(){
                     onChange={setNewChatName}
                     onCancel={handleCancelCreateChat}
                     onConfirm={handleCreateChat}
+                />
+            )}
+
+            {(modelsPopoverChat || true )&& (
+                <CadModalList
+                    models={mockModels}
+                    onClose={() => setModelsPopoverChatId(null)}
+                    popoverRef={modelsPopoverRef}
                 />
             )}
         </div> 
