@@ -398,7 +398,7 @@ export default function Creating(){
                 />
             )}
 
-            {(modelsPopoverChat || true )&& (
+            {modelsPopoverChat && (
                 <CadModalList
                     models={mockModels}
                     onClose={() => setModelsPopoverChatId(null)}
