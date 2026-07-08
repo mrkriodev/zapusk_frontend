@@ -313,7 +313,7 @@ export default function Creating(){
 
                     <div className="flex flex-col items-center">
                         <h1 className="font-bold flex lg:text-3xl items-center sm:text-lg">
-                            <Sparkles className="w-4 h-4 text-purple-400 lg:mr-4 mr-1" />
+                            <Sparkles className="w-4 h-4 text-purple-400 lg:mr-6 mr-1" />
                             Дизайн аэрокосмических деталей
                         </h1>
 
@@ -498,7 +498,7 @@ export default function Creating(){
                     onDownload={handleDownloadCadFile}
                     onClose={() => setModelsPopoverChatId(null)}
                     popoverRef={modelsPopoverRef}
-                    
+
                 />
             )}
         </div> 
