@@ -189,6 +189,11 @@ export default function Creating(){
     const isGeneratingModel = Boolean(activeJob);
     const showEmptyChatsState = !conversationsLoading && !conversationsError && !hasChats;
     const inputPlaceholder = isGeneratingModel ? "Идет генерация модели" : "Опишите нужную вам деталь";
+    const cadVersionByCadStateId = useMemo(() => {
+        const items = cadVersionsData?.items ?? [];
+
+        return new Map(items.map((item) => [item.id, item.version]));
+    }, [cadVersionsData?.items]);
     const cadVersionByMessageId = useMemo(() => {
         const items = cadVersionsData?.items ?? [];
 
@@ -277,7 +282,9 @@ export default function Creating(){
     const handleDownloadMessageCadFile = async (message: Message) => {
         if (!activeChat) return;
 
-        const version = cadVersionByMessageId.get(message.id);
+        const version = message.cad_state_id
+            ? cadVersionByCadStateId.get(message.cad_state_id) ?? cadVersionByMessageId.get(message.id)
+            : cadVersionByMessageId.get(message.id);
 
         if (!version) {
             console.error("Не найдена CAD-версия для сообщения:", message.id);
