@@ -498,6 +498,7 @@ export default function Creating(){
                     onDownload={handleDownloadCadFile}
                     onClose={() => setModelsPopoverChatId(null)}
                     popoverRef={modelsPopoverRef}
+                    
                 />
             )}
         </div> 
