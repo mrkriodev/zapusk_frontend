@@ -1,11 +1,18 @@
 import { ChevronRight, Download, Package, X } from "lucide-react";
 import type { CadModalListProps } from "../../../../../types/UITypes/creatingTypes";
 
-export default function CadModalList({ models, onClose, popoverRef }: CadModalListProps) {
+export default function CadModalList({
+  models,
+  isLoading,
+  isDownloadingId,
+  onDownload,
+  onClose,
+  popoverRef,
+}: CadModalListProps) {
   return (
     <div
       ref={popoverRef}
-      className="fixed left-3 right-3 top-28 z-60 lg:left-[calc(20vw+24px)] lg:right-auto lg:top-36 lg:w-64"
+      className="fixed left-3 right-3 top-28 z-60 lg:left-[calc(20vw+24px)] lg:right-auto lg:top-36 lg:w-64 min-w-68"
     >
       <div className="bg-blue-950/98 backdrop-blur-md border border-blue-400/30 rounded-xl shadow-2xl shadow-blue-950/80 overflow-hidden">
         <div className="px-4 py-3 border-b border-blue-400/20 flex items-center gap-2">
@@ -23,24 +30,38 @@ export default function CadModalList({ models, onClose, popoverRef }: CadModalLi
         </div>
 
         <div className="py-2 max-h-64 overflow-y-auto">
-          {models.map((model) => (
-            <button
-              key={model.id}
-              type="button"
-              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-blue-800/40 transition-colors text-left group/item"
-            >
-              <div className="p-1.5 bg-purple-500/20 rounded-lg shrink-0">
-                <Download className="w-3.5 h-3.5 text-purple-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-white text-sm truncate">{model.name}</div>
-                <div className="text-blue-400 text-xs">
-                  {model.size} · {model.time}
+          {isLoading && (
+            <div className="px-4 py-3 text-sm text-blue-300">Загрузка моделей...</div>
+          )}
+
+          {!isLoading && models.length === 0 && (
+            <div className="px-4 py-3 text-sm text-blue-300">У этого чата пока нет CAD-файлов</div>
+          )}
+
+          {!isLoading && models.map((model) => {
+            const isDownloading = isDownloadingId === model.id;
+
+            return (
+              <button
+                key={model.id}
+                type="button"
+                onClick={() => onDownload(model)}
+                disabled={isDownloading}
+                className="group/item flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-blue-800/40 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <div className="rounded-lg bg-purple-500/20 p-1.5 shrink-0">
+                  <Download className="w-3.5 h-3.5 text-purple-400" />
                 </div>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5 text-blue-500 group-hover/item:text-blue-300 transition-colors shrink-0" />
-            </button>
-          ))}
+                <div className="flex-1 min-w-0">
+                  <div className="text-white text-sm truncate">{model.name}</div>
+                  <div className="text-blue-400 text-xs">
+                    {isDownloading ? "Скачивание..." : model.time}
+                  </div>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-blue-500 group-hover/item:text-blue-300 transition-colors shrink-0" />
+              </button>
+            );
+          })}
         </div>
 
       </div>

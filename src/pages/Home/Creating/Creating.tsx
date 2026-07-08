@@ -1,56 +1,29 @@
 import { Menu, Plus, Send, Sparkles, X } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import type { CadModel, Chat } from "../../../types/UITypes/creatingTypes";
+import type { Message } from "../../../types/apiTypes/MessageTypes";
+import type { CadDownloadFormat } from "../../../types/apiTypes/CadTypes";
 import ChatItem from "./components/chat/ChatItem";
+import LoadingMessage from "./components/chat/LoadingMessage";
 import MessageItem from "./components/chat/MessageItem";
 import DeleteModal from "./components/modals/DeleteModal";
 import CreateModal from "./components/modals/CreateModal";
 import { useCreateConversationMutation, useDeleteConversationMutation, useGetConservationByIdQuery, useGetConversationsQuery, useSendMessageMutation } from "../../../api/repository/ConversationsApi";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useGetJobByIdQuery } from "../../../api/repository/JobsApi";
+import { useGetCadVersionsQuery, useLazyDownloadCadFileQuery } from "../../../api/repository/CadApi";
 import CadModalList from "./components/modals/CadModalList";
-
-const getMockCadModels = (chat: Chat): CadModel[] => {
-    const title = chat.title?.trim() || "Новый чат";
-    const version = chat.current_version ?? 1;
-
-    return [
-        {
-            id: `${chat.id}-stl-${version}`,
-            name: `${title} v${version}.stl`,
-            size: "2.4 MB",
-            time: "только что",
-        },
-        {
-            id: `${chat.id}-step-${version}`,
-            name: `${title} v${version}.step`,
-            size: "4.8 MB",
-            time: "2 мин назад",
-        },
-        {
-            id: `${chat.id}-preview-${version}`,
-            name: `${title} preview.obj`,
-            size: "1.1 MB",
-            time: "5 мин назад",
-        },
-    ];
-}
-
 
 export default function Creating(){
 
     const { data: conversationsData, isLoading: conversationsLoading, error: conversationsError } = useGetConversationsQuery()
-    const chats = conversationsData?.items ?? []
+    const chats = useMemo(() => conversationsData?.items ?? [], [conversationsData?.items])
 
-    const [activeChat, setActiveChat] = useState<string | null>(null)
+    const [selectedChat, setActiveChat] = useState<string | null>(null)
+    const activeChat = selectedChat ?? chats[0]?.id ?? null
     const {data: conversationsIdData, refetch: refetchConversation,} = useGetConservationByIdQuery(activeChat ?? skipToken)
     const messages = conversationsIdData?.messages ?? []
-
-    useEffect(() => {
-        if (chats.length > 0 && !activeChat) {
-            setActiveChat(chats[0].id)
-        }
-    }, [chats, activeChat])
+    const { data: cadVersionsData } = useGetCadVersionsQuery(activeChat ?? skipToken)
  
     const [createConversation, ] = useCreateConversationMutation()
 
@@ -65,6 +38,9 @@ export default function Creating(){
     const [input, setInput] = useState('')
 
     const [sendMessage, {isLoading: isSendingMessage}] = useSendMessageMutation()
+    const [downloadCadFileTrigger, { isFetching: isDownloadingCadFile }] = useLazyDownloadCadFileQuery()
+    const [downloadingCadItemId, setDownloadingCadItemId] = useState<string | null>(null)
+    const { data: modalCadVersionsData, isLoading: isModalCadVersionsLoading } = useGetCadVersionsQuery(modelsPopoverChatId ?? skipToken)
 
     const handleSend = async () => {
         const text = input.trim();
@@ -91,39 +67,36 @@ export default function Creating(){
     }
     
 
-    const MAX_JOB_POLL_REQUESTS = 15;
+    const JOB_POLL_TIMEOUT_MS = 160_000;
 
     const [activeJob, setActiveJob] = useState<{
         jobId: string;
         conversationId: string;
     } | null>(null);
 
-    const [jobPollCount, setJobPollCount] = useState(0);
-    const prevIsJobFetchingRef = useRef(false);
-
-    const canPollJob = Boolean(activeJob) && jobPollCount < MAX_JOB_POLL_REQUESTS;
+    const canPollJob = Boolean(activeJob);
 
     const {
         data: jobData,
         error: jobError,
-        isFetching: isJobFetching,
     } = useGetJobByIdQuery(activeJob?.jobId ?? skipToken, {
         pollingInterval: canPollJob ? 2000 : 0,
         skipPollingIfUnfocused: true,
     });
 
     useEffect(() => {
-        setJobPollCount(0);
-        prevIsJobFetchingRef.current = false;
-    }, [activeJob?.jobId]);
+        if (!activeJob) return;
 
-    useEffect(() => {
-        if (isJobFetching && !prevIsJobFetchingRef.current) {
-            setJobPollCount((prev) => prev + 1);
-        }
+        const timeoutId = window.setTimeout(() => {
+            console.error("Превышен лимит polling job по времени");
+            setActiveJob(null);
+            refetchConversation();
+        }, JOB_POLL_TIMEOUT_MS);
 
-        prevIsJobFetchingRef.current = isJobFetching;
-    }, [isJobFetching]);
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [activeJob, refetchConversation]);
 
     useEffect(() => {
         if (!jobError) return
@@ -145,19 +118,6 @@ export default function Creating(){
             }
         }
     }, [jobData, activeJob, activeChat, refetchConversation]);
-
-
-    useEffect(() => {
-        if (!activeJob) return;
-
-        if (jobPollCount >= MAX_JOB_POLL_REQUESTS) {
-            console.error("Превышен лимит polling-запросов");
-
-            setActiveJob(null);
-            refetchConversation();
-        }
-    }, [jobPollCount, activeJob, refetchConversation]);
-    
 
     const handleDeleteChat = async (chat: Chat) => {
         try {
@@ -224,7 +184,114 @@ export default function Creating(){
     }, [modelsPopoverChatId]);
 
     const modelsPopoverChat = chats.find((chat) => chat.id === modelsPopoverChatId);
-    const mockModels = modelsPopoverChat ? getMockCadModels(modelsPopoverChat) : [];
+    const hasChats = chats.length > 0;
+    const isWaitingForMessage = Boolean(activeJob && activeJob.conversationId === activeChat);
+    const isGeneratingModel = Boolean(activeJob);
+    const showEmptyChatsState = !conversationsLoading && !conversationsError && !hasChats;
+    const inputPlaceholder = isGeneratingModel ? "Идет генерация модели" : "Опишите нужную вам деталь";
+    const cadVersionByMessageId = useMemo(() => {
+        const items = cadVersionsData?.items ?? [];
+
+        return new Map(items.map((item) => [item.message_id, item.version]));
+    }, [cadVersionsData?.items]);
+    const cadModalModels = useMemo(() => {
+        const items = modalCadVersionsData?.items ?? [];
+
+        return items.flatMap((item) => {
+            const formattedTime = new Date(item.created_at).toLocaleString("ru-RU", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+            });
+
+            const files: CadModel[] = [];
+
+            if (item.files.stl) {
+                files.push({
+                    id: `${item.id}-stl`,
+                    conversationId: item.conversation_id,
+                    version: item.version,
+                    format: "stl",
+                    fileName: `model-v${item.version}.stl`,
+                    name: `Модель v${item.version}.stl`,
+                    time: `STL · ${formattedTime}`,
+                });
+            }
+
+            if (item.files.step) {
+                files.push({
+                    id: `${item.id}-step`,
+                    conversationId: item.conversation_id,
+                    version: item.version,
+                    format: "step",
+                    fileName: `model-v${item.version}.step`,
+                    name: `Модель v${item.version}.step`,
+                    time: `STEP · ${formattedTime}`,
+                });
+            }
+
+            return files;
+        });
+    }, [modalCadVersionsData?.items]);
+
+    const handleDownloadCadFile = async ({
+        id,
+        conversationId,
+        version,
+        format,
+        fileName,
+    }: {
+        id: string;
+        conversationId: string;
+        version: number;
+        format: CadDownloadFormat;
+        fileName: string;
+    }) => {
+        try {
+            setDownloadingCadItemId(id);
+
+            const blob = await downloadCadFileTrigger({
+                conversationId,
+                version,
+                format,
+            }).unwrap();
+
+            const fileUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = fileUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(fileUrl);
+        } catch (error) {
+            console.error("Ошибка скачивания CAD-файла:", error);
+        } finally {
+            setDownloadingCadItemId(null);
+        }
+    };
+
+    const handleDownloadMessageCadFile = async (message: Message) => {
+        if (!activeChat) return;
+
+        const version = cadVersionByMessageId.get(message.id);
+
+        if (!version) {
+            console.error("Не найдена CAD-версия для сообщения:", message.id);
+            return;
+        }
+
+        await handleDownloadCadFile({
+            id: message.id,
+            conversationId: activeChat,
+            version,
+            format: "stl",
+            fileName: `model-v${version}.stl`,
+        });
+    };
 
     return(
         <div className="h-dvh pt-16 flex flex-col overflow-hidden bg-amber-300 p-2 bg-linear-to-br bg-[linear-gradient(160deg,_#020617_0%,_#06111f_45%,_#0b1f3a_75%,_#0f2a5f_100%)] ">
@@ -345,35 +412,53 @@ export default function Creating(){
                         </div>
 
                         <div className="flex flex-col h-full min-h-0 rounded-2xl border-2 bg-slate-950 border-blue-400/20 overflow-hidden">
-                            <ul className="flex flex-col-reverse flex-1 min-h-0 pt-4 px-4 pb-2 overflow-y-auto">
+                            {showEmptyChatsState ? (
+                                <div className="flex flex-1 items-center justify-center px-6 text-center">
+                                    <p className="max-w-md text-sm leading-relaxed text-blue-200 lg:text-base">
+                                        У вас пока нет чатов, создайте новый и начните генерировать!
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <ul className="flex flex-col-reverse flex-1 min-h-0 pt-4 px-4 pb-2 overflow-y-auto">
+                                        {isWaitingForMessage && (
+                                            <LoadingMessage />
+                                        )}
 
-                                {messages.slice().reverse().map((message) => (
-                                    <MessageItem key={message.id} message={message} />
-                                ))}
-                            </ul>
+                                        {messages.slice().reverse().map((message) => (
+                                            <MessageItem
+                                                key={message.id}
+                                                message={message}
+                                                onDownloadCadFile={handleDownloadMessageCadFile}
+                                                isDownloading={isDownloadingCadFile && downloadingCadItemId === message.id}
+                                            />
+                                        ))}
+                                    </ul>
 
-                            <div className="w-full shrink-0 flex bg-blue-900/30 border-t p-3 border-blue-400/20 gap-3">
+                                    <div className="w-full shrink-0 flex bg-blue-900/30 border-t p-3 border-blue-400/20 gap-3">
 
-                                <input type="text" 
-                                    value={input}
-                                    placeholder="Опишите нужную вам деталь"
-                                    onChange={((e) => setInput(e.target.value))}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                    disabled={isSendingMessage || !activeChat || !!activeJob}
-                                    className="lg:flex-8/10 flex-7/10 bg-blue-800/30 border border-blue-400/30 lg:rounded-3xl rounded-2xl lg:px-6 lg:py-4 px-4 py-2 text-white placeholder-blue-300/50 focus:outline-none 
-                                focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/20 text-base"
-                                />
+                                        <input type="text" 
+                                            value={input}
+                                            placeholder={inputPlaceholder}
+                                            onChange={((e) => setInput(e.target.value))}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                            disabled={isSendingMessage || !activeChat || !!activeJob}
+                                            className="lg:flex-8/10 flex-7/10 bg-blue-800/30 border border-blue-400/30 lg:rounded-3xl rounded-2xl lg:px-6 lg:py-4 px-4 py-2 text-white placeholder-blue-300/50 focus:outline-none 
+                                        focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/20 text-base"
+                                        />
 
-                                <button 
-                                onClick={handleSend}
-                                disabled={isSendingMessage || !activeChat || !input.trim() || !!activeJob}
-                                className="flex lg:flex-1/10 flex-2/10 lg:max-w-50 max-w-25 items-center  justify-center py-2 lg:rounded-3xl rounded-2xl transition-all 
-                                                    bg-linear-to-r text-sm from-blue-600 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700">
-                                    <Send className="w-5 h-5" />
-                                
-                                </button>
+                                        <button 
+                                        onClick={handleSend}
+                                        disabled={isSendingMessage || !activeChat || !input.trim() || !!activeJob}
+                                        className="flex lg:flex-1/10 flex-2/10 lg:max-w-50 max-w-25 items-center  justify-center py-2 lg:rounded-3xl rounded-2xl transition-all 
+                                                            bg-linear-to-r text-sm from-blue-600 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700">
+                                            <Send className="w-5 h-5" />
+                                        
+                                        </button>
 
-                            </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                     </div>
@@ -400,7 +485,10 @@ export default function Creating(){
 
             {modelsPopoverChat && (
                 <CadModalList
-                    models={mockModels}
+                    models={cadModalModels}
+                    isLoading={isModalCadVersionsLoading}
+                    isDownloadingId={isDownloadingCadFile ? downloadingCadItemId : null}
+                    onDownload={handleDownloadCadFile}
                     onClose={() => setModelsPopoverChatId(null)}
                     popoverRef={modelsPopoverRef}
                 />

@@ -3,9 +3,15 @@ import type { Message } from "../../../../../types/apiTypes/MessageTypes";
 
 type MessageItemProps = {
   message: Message;
+  onDownloadCadFile?: (message: Message) => void;
+  isDownloading?: boolean;
 };
 
-export default function MessageItem({message} : MessageItemProps){
+export default function MessageItem({
+    message,
+    onDownloadCadFile,
+    isDownloading = false,
+} : MessageItemProps){
 
     const isUser = message.role === "user"
     const hasFile = Boolean(message.cad_state_id)
@@ -24,10 +30,14 @@ export default function MessageItem({message} : MessageItemProps){
         >
         <p className="leading-relaxed lg:text-md text-sm">{message.content}</p>
         {hasFile && (
-            <button className="mt-4 flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 
-            text-green-300 px-4 py-2 rounded-lg border border-green-400/30 transition-all">
+            <button
+                type="button"
+                onClick={() => onDownloadCadFile?.(message)}
+                disabled={isDownloading}
+                className="mt-4 flex items-center gap-2 rounded-lg border border-green-400/30 bg-green-500/20 px-4 py-2 text-green-300 transition-all hover:bg-green-500/30 disabled:cursor-not-allowed disabled:opacity-60 w-47"
+            >
                 <Download className="w-4 h-4" />
-                Скачать модель.stl
+                {isDownloading ? "Скачивание..." : "Скачать модель"}
             </button>
         )}
         </div>
