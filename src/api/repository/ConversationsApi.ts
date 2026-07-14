@@ -1,7 +1,13 @@
 import type { PaginationParams } from "../../types/apiTypes/ApiTypes";
-import type { Conversation, ConversationDetail, ConversationsResponse, CreateConversationRequest } from "../../types/apiTypes/ConversationTypes";
-import type { JobAccepted } from "../../types/apiTypes/JobTypes";
-import type { SendMessageArgs } from "../../types/apiTypes/MessageTypes";
+import type {
+    AssistantChatOut,
+    Conversation,
+    ConversationDetail,
+    ConversationsResponse,
+    CreateConversationRequest
+} from "../../types/apiTypes/ConversationTypes";
+import type { GenerateRequest, JobAccepted } from "../../types/apiTypes/JobTypes";
+import type { AssistantChatRequest, SendMessageArgs } from "../../types/apiTypes/MessageTypes";
 import { baseApi } from "../baseApi";
 
 export const conversationApi = baseApi.injectEndpoints({
@@ -60,6 +66,39 @@ export const conversationApi = baseApi.injectEndpoints({
                 { type: "Messages", id: args.conversationId },
                 { type: "Jobs", id: args.conversationId },
             ]
+        }),
+
+        chatWithAssistant: builder.mutation<
+            AssistantChatOut,
+            { conversationId: string } & AssistantChatRequest
+        >({
+            query: ({ conversationId, ...body }) => ({
+                url: `/conversations/${conversationId}/assistant`,
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: (_result, _error, args) => [
+                { type: "Conversations", id: args.conversationId },
+                { type: "Messages", id: args.conversationId },
+                { type: "Cad", id: args.conversationId },
+            ]
+        }),
+
+        generateConversation: builder.mutation<
+            JobAccepted,
+            { conversationId: string } & GenerateRequest
+        >({
+            query: ({ conversationId, ...body }) => ({
+                url: `/conversations/${conversationId}/generate`,
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: (_result, _error, args) => [
+                { type: "Conversations", id: args.conversationId },
+                { type: "Messages", id: args.conversationId },
+                { type: "Jobs", id: args.conversationId },
+                { type: "Cad", id: args.conversationId },
+            ]
         })
     })
 })
@@ -69,5 +108,7 @@ export const {
     useGetConservationByIdQuery,
     useCreateConversationMutation,
     useDeleteConversationMutation,
-    useSendMessageMutation
+    useSendMessageMutation,
+    useChatWithAssistantMutation,
+    useGenerateConversationMutation
 } = conversationApi

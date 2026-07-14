@@ -1,4 +1,4 @@
-import type { CadState } from "./CadTypes";
+import type { CadState, EngineParams } from "./CadTypes";
 import type { Message } from "./MessageTypes";
 
 
@@ -24,4 +24,12 @@ export interface ConversationDetail extends Conversation {
 export interface ConversationsResponse {
   items: Conversation[];
   total: number;
+}
+
+export interface AssistantChatOut {
+  conversation_id: string;
+  user_message: Message;
+  assistant_message: Message;
+  draft_params: EngineParams;
+  missing_inputs: string[];
 }
