@@ -383,10 +383,11 @@ export default function Creating() {
   const handleDownloadMessageCadFile = async (message: Message) => {
     if (!activeChat) return;
 
-    const version = message.cad_state_id
-      ? (cadVersionByCadStateId.get(message.cad_state_id) ??
-        cadVersionByMessageId.get(message.id))
-      : cadVersionByMessageId.get(message.id);
+    let version;
+
+    if (message.cad_state_id && conversationsIdData?.current_cad?.id === message.cad_state_id) {
+        version = conversationsIdData.current_cad.version;
+    }
 
     if (!version) {
       console.error("Не найдена CAD-версия для сообщения:", message.id);
