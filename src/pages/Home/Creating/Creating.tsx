@@ -290,16 +290,16 @@ export default function Creating() {
   const inputPlaceholder = isGeneratingModel
     ? "Идет генерация модели"
     : "Опишите нужную вам деталь";
-  const cadVersionByCadStateId = useMemo(() => {
-    const items = cadVersionsData?.items ?? [];
+//   const cadVersionByCadStateId = useMemo(() => {
+//     const items = cadVersionsData?.items ?? [];
 
-    return new Map(items.map((item) => [item.id, item.version]));
-  }, [cadVersionsData?.items]);
-  const cadVersionByMessageId = useMemo(() => {
-    const items = cadVersionsData?.items ?? [];
+//     return new Map(items.map((item) => [item.id, item.version]));
+//   }, [cadVersionsData?.items]);
+//   const cadVersionByMessageId = useMemo(() => {
+//     const items = cadVersionsData?.items ?? [];
 
-    return new Map(items.map((item) => [item.message_id, item.version]));
-  }, [cadVersionsData?.items]);
+//     return new Map(items.map((item) => [item.message_id, item.version]));
+//   }, [cadVersionsData?.items]);
   const cadModalModels = useMemo(() => {
     const items = modalCadVersionsData?.items ?? [];
 
