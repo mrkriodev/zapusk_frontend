@@ -381,27 +381,45 @@ export default function Creating() {
   };
 
   const handleDownloadMessageCadFile = async (message: Message) => {
-    if (!activeChat) return;
+  if (!activeChat) return;
 
-    let version;
+  let version: number | undefined;
 
-    if (message.cad_state_id && conversationsIdData?.current_cad?.id === message.cad_state_id) {
-        version = conversationsIdData.current_cad.version;
+  if (message.cad_state_id && conversationsIdData?.current_cad?.id === message.cad_state_id) {
+    version = conversationsIdData.current_cad.version;
+  }
+
+  if (!version && cadVersionsData?.items) {
+    const byCadState = cadVersionsData.items.find(
+      item => item.id === message.cad_state_id
+    );
+    if (byCadState) {
+      version = byCadState.version;
     }
-
+    
     if (!version) {
-      console.error("Не найдена CAD-версия для сообщения:", message.id);
-      return;
+      const byMessage = cadVersionsData.items.find(
+        item => item.message_id === message.id
+      );
+      if (byMessage) {
+        version = byMessage.version;
+      }
     }
+  }
 
-    await handleDownloadCadFile({
-      id: message.id,
-      conversationId: activeChat,
-      version,
-      format: "stl",
-      fileName: `model-v${version}.stl`,
-    });
-  };
+  if (!version) {
+    console.error("Не найдена CAD-версия для сообщения:", message.id);
+    return;
+  }
+
+  await handleDownloadCadFile({
+    id: message.id,
+    conversationId: message.conversation_id || activeChat,
+    version,
+    format: "stl",
+    fileName: `model-v${version}.stl`,
+  });
+};
 
   return (
     <div className="h-dvh pt-16 flex flex-col overflow-hidden bg-amber-300 p-2 bg-linear-to-br bg-[linear-gradient(160deg,_#020617_0%,_#06111f_45%,_#0b1f3a_75%,_#0f2a5f_100%)] ">
