@@ -1,4 +1,4 @@
-import { Menu, Plus, Send, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { Menu, Plus, Sparkles, X } from "lucide-react";
 import { useEffect, useState, useRef, useMemo } from "react";
 import type { CadModel, Chat } from "../../../types/UITypes/creatingTypes";
 import type { Message } from "../../../types/apiTypes/MessageTypes";
@@ -9,7 +9,6 @@ import LoadingMessage from "./components/chat/LoadingMessage";
 import MessageItem from "./components/chat/MessageItem";
 import DeleteModal from "./components/modals/DeleteModal";
 import CreateModal from "./components/modals/CreateModal";
-import ParamsModal from "./components/modals/ParamsModal";
 import {
   useChatWithAssistantMutation,
   useCreateConversationMutation,
@@ -25,115 +24,142 @@ import {
   useLazyDownloadCadFileQuery,
 } from "../../../api/repository/CadApi";
 import CadModalList from "./components/modals/CadModalList";
+import { JOB_POLL_TIMEOUT_MS } from "../../../constants/constants";
+import { InputSendLine } from "./components/chat/InputSendLine";
+
 
 export default function Creating() {
-  const {
-    data: conversationsData,
-    isLoading: conversationsLoading,
-    error: conversationsError,
-  } = useGetConversationsQuery();
+  // гет и мемо список чатов
+  const { data: conversationsData, isLoading: conversationsLoading, error: conversationsError} = useGetConversationsQuery();
   const chats = useMemo(
     () => conversationsData?.items ?? [],
     [conversationsData?.items],
   );
 
+  // стейт для селекта чата + тянем сообщения + все кады
   const [selectedChat, setActiveChat] = useState<string | null>(null);
   const activeChat = selectedChat ?? chats[0]?.id ?? null;
-  const { data: conversationsIdData, refetch: refetchConversation } =
-    useGetConservationByIdQuery(activeChat ?? skipToken);
+  const { data: conversationsIdData, refetch: refetchConversation } = useGetConservationByIdQuery(activeChat ?? skipToken);
   const messages = conversationsIdData?.messages ?? [];
-  const { data: cadVersionsData } = useGetCadVersionsQuery(
-    activeChat ?? skipToken,
-  );
+  const { data: cadVersionsData } = useGetCadVersionsQuery(activeChat ?? skipToken);
 
+  // post создаем чат
   const [createConversation] = useCreateConversationMutation();
 
+  // сайд бар дл мобилок
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // стейт и запрос для удаления чата
   const [chatToDelete, setChatToDelete] = useState<Chat | null>(null);
-  const [modelsPopoverChatId, setModelsPopoverChatId] = useState<string | null>(
-    null,
-  );
-  const modelsPopoverRef = useRef<HTMLDivElement | null>(null);
-
   const [deleteConversation] = useDeleteConversationMutation();
 
-  const [input, setInput] = useState("");
-  const [paramsInput, setParamsInput] = useState("");
-  const [assistantDraftParams, setAssistantDraftParams] =
-    useState<EngineParams | null>(null);
+  // стейт и реф для модалки списка кадов
+  const [modelsPopoverChatId, setModelsPopoverChatId] = useState<string | null>(null);
+  const modelsPopoverRef = useRef<HTMLDivElement | null>(null);
 
-  const [chatWithAssistant, { isLoading: isAssistantLoading }] =
-    useChatWithAssistantMutation();
-  const [generateConversation, { isLoading: isGeneratingRequest }] =
-    useGenerateConversationMutation();
-  const [downloadCadFileTrigger, { isFetching: isDownloadingCadFile }] =
-    useLazyDownloadCadFileQuery();
-  const [downloadingCadItemId, setDownloadingCadItemId] = useState<
-    string | null
-  >(null);
-  const { data: modalCadVersionsData, isLoading: isModalCadVersionsLoading } =
-    useGetCadVersionsQuery(modelsPopoverChatId ?? skipToken);
+  const [input, setInput] = useState(""); // стейт для строки ввода
+  const [pendingRequestConversationId, setPendingRequestConversationId] =
+    useState<string | null>(null);
+  const [optimisticMessage, setOptimisticMessage] = useState<Message | null>(
+    null,
+  );
+  
+  // стейт для хранения параметров ассиста (из ответа ручки)
+  const [assistantDraftParams, setAssistantDraftParams] = useState<EngineParams | null>(null);
 
+  // пост отправка сообщения assist
+  const [chatWithAssistant, { isLoading: isAssistantLoading }] = useChatWithAssistantMutation();
+  
+  // пост отправка сообщения generate
+  const [generateConversation, { isLoading: isGeneratingRequest }] = useGenerateConversationMutation();
+  
+  // гет и стейт загрузка cad файла
+  const [downloadCadFileTrigger, { isFetching: isDownloadingCadFile }] = useLazyDownloadCadFileQuery();
+  const [downloadingCadItemId, setDownloadingCadItemId] = useState<string | null>(null);
+  
+  // гет списка всех кадов
+  const { data: modalCadVersionsData, isLoading: isModalCadVersionsLoading } = useGetCadVersionsQuery(modelsPopoverChatId ?? skipToken);
+
+  // отправка сообщения генерации
   const handleSend = async () => {
     const text = input.trim();
 
     if (!text || !activeChat) return;
 
+    const conversationId = activeChat;
+    setPendingRequestConversationId(conversationId);
+    setInput("");
+    setOptimisticMessage({
+      id: `optimistic-${crypto.randomUUID()}`,
+      conversation_id: conversationId,
+      role: "user",
+      content: text,
+      cad_state_id: null,
+      created_at: new Date().toISOString(),
+    });
+
     try {
       setJobFailure((current) =>
-        current?.conversationId === activeChat ? null : current,
+        current?.conversationId === conversationId ? null : current,
       );
 
       const job = await generateConversation({
-        conversationId: activeChat,
+        conversationId,
         text,
         ...(assistantDraftParams ? { params: assistantDraftParams } : {}),
       }).unwrap();
 
-      setInput("");
-
       setActiveJob({
         jobId: job.job_id,
-        conversationId: activeChat,
+        conversationId,
       });
     } catch (error) {
       console.error("Ошибка отправки сообщения:", error);
+      setOptimisticMessage(null);
+    } finally {
+      setPendingRequestConversationId(null);
     }
   };
 
+  // отправка соообщения ассиста
   const handleAssistantSubmit = async () => {
-    const text = paramsInput.trim();
+    const text = input.trim();
 
     if (!text || !activeChat) return;
 
+    const conversationId = activeChat;
+    setPendingRequestConversationId(conversationId);
+    setInput("");
+    setOptimisticMessage({
+      id: `optimistic-${crypto.randomUUID()}`,
+      conversation_id: conversationId,
+      role: "user",
+      content: text,
+      cad_state_id: null,
+      created_at: new Date().toISOString(),
+    });
+
     try {
       const response = await chatWithAssistant({
-        conversationId: activeChat,
+        conversationId,
         text,
       }).unwrap();
 
       setAssistantDraftParams(response.draft_params);
-      setParamsInput("");
-      setShowParamsModal(false);
     } catch (error) {
       console.error("Ошибка уточнения параметров:", error);
+      setOptimisticMessage(null);
+    } finally {
+      setPendingRequestConversationId(null);
     }
   };
 
-  const JOB_POLL_TIMEOUT_MS = 160_000;
-
-  const [activeJob, setActiveJob] = useState<{
-    jobId: string;
-    conversationId: string;
-  } | null>(null);
-  const [jobFailure, setJobFailure] = useState<{
-    conversationId: string;
-    message: string;
-  } | null>(null);
-
+  // стейты для поллинга
+  const [activeJob, setActiveJob] = useState<{jobId: string; conversationId: string;} | null>(null);
+  const [jobFailure, setJobFailure] = useState<{conversationId: string; message: string;} | null>(null);
   const canPollJob = Boolean(activeJob);
 
+  // хук поллинга сообщения
   const { data: jobData, error: jobError } = useGetJobByIdQuery(
     activeJob?.jobId ?? skipToken,
     {
@@ -142,6 +168,7 @@ export default function Creating() {
     },
   );
 
+  // юзеффект таймер поллинга
   useEffect(() => {
     if (!activeJob) return;
 
@@ -161,6 +188,7 @@ export default function Creating() {
     };
   }, [activeJob, refetchConversation]);
 
+  // юзеффект ошибки поллинга
   useEffect(() => {
     if (!jobError) return;
 
@@ -175,6 +203,7 @@ export default function Creating() {
     setActiveJob(null);
   }, [jobError, activeJob]);
 
+  // юзеффект отслеживания статуса поллинга
   useEffect(() => {
     if (!jobData || !activeJob) return;
 
@@ -206,6 +235,7 @@ export default function Creating() {
     }
   }, [jobData, activeJob, activeChat, refetchConversation]);
 
+  // функция удаления чата
   const handleDeleteChat = async (chat: Chat) => {
     try {
       await deleteConversation(chat.id).unwrap();
@@ -225,10 +255,10 @@ export default function Creating() {
     }
   };
 
-  const [isModalCreate, setIsModalCreate] = useState<boolean>(false);
-  const [showParamsModal, setShowParamsModal] = useState(false);
-  const [newChatName, setNewChatName] = useState("");
+  const [isModalCreate, setIsModalCreate] = useState<boolean>(false); // стейт показа модалки создания чата 
+  const [newChatName, setNewChatName] = useState(""); // стейт имя нового чата
 
+  // коллбек создания чата
   const handleCreateChat = async () => {
     try {
       const newConversation = await createConversation({
@@ -244,23 +274,41 @@ export default function Creating() {
       console.error("Ошибка создания чата:", error);
     }
   };
-
+  // коллбек отмены создания чата
   const handleCancelCreateChat = () => {
     setNewChatName("");
     setIsModalCreate(false);
   };
 
+  // коллбек открытия чата
   const handleSelectChat = (chatId: string) => {
     setActiveChat(chatId);
     setIsSidebarOpen(false);
     setModelsPopoverChatId(null);
   };
-
+  // сброс введеного текста при изменении чата
   useEffect(() => {
     setAssistantDraftParams(null);
-    setParamsInput("");
   }, [activeChat]);
 
+  useEffect(() => {
+    if (!optimisticMessage) return;
+
+    const optimisticCreatedAt = new Date(optimisticMessage.created_at).getTime();
+    const hasServerMessage = messages.some(
+      (message) =>
+        message.conversation_id === optimisticMessage.conversation_id &&
+        message.role === "user" &&
+        message.content === optimisticMessage.content &&
+        new Date(message.created_at).getTime() >= optimisticCreatedAt - 5_000,
+    );
+
+    if (hasServerMessage) {
+      setOptimisticMessage(null);
+    }
+  }, [messages, optimisticMessage]);
+
+  // 
   useEffect(() => {
     if (!modelsPopoverChatId) return;
 
@@ -277,29 +325,23 @@ export default function Creating() {
     };
   }, [modelsPopoverChatId]);
 
-  const modelsPopoverChat = chats.find(
-    (chat) => chat.id === modelsPopoverChatId,
-  );
+  // чат для которого тнужно найти все кады
+  const modelsPopoverChat = chats.find((chat) => chat.id === modelsPopoverChatId);
   const hasChats = chats.length > 0;
+
+  // флаги для поллинга 
   const isWaitingForMessage = Boolean(
-    activeJob && activeJob.conversationId === activeChat,
+    activeChat &&
+      (pendingRequestConversationId === activeChat ||
+        (activeJob && activeJob.conversationId === activeChat)),
   );
   const isGeneratingModel = Boolean(activeJob);
-  const showEmptyChatsState =
-    !conversationsLoading && !conversationsError && !hasChats;
-  const inputPlaceholder = isGeneratingModel
-    ? "Идет генерация модели"
-    : "Опишите нужную вам деталь";
-//   const cadVersionByCadStateId = useMemo(() => {
-//     const items = cadVersionsData?.items ?? [];
+  const isInputBusy = isAssistantLoading || isGeneratingRequest || isGeneratingModel;
 
-//     return new Map(items.map((item) => [item.id, item.version]));
-//   }, [cadVersionsData?.items]);
-//   const cadVersionByMessageId = useMemo(() => {
-//     const items = cadVersionsData?.items ?? [];
+  const showEmptyChatsState = !conversationsLoading && !conversationsError && !hasChats; // флаг отсутствия чатов
+  const inputPlaceholder = isGeneratingModel ? "Идет генерация модели" : "Опишите нужную вам деталь";
 
-//     return new Map(items.map((item) => [item.message_id, item.version]));
-//   }, [cadVersionsData?.items]);
+  // чето вроде маппера для передачи кад моделей в модлку где все кады
   const cadModalModels = useMemo(() => {
     const items = modalCadVersionsData?.items ?? [];
 
@@ -342,6 +384,7 @@ export default function Creating() {
     });
   }, [modalCadVersionsData?.items]);
 
+  // 
   const handleDownloadCadFile = async ({
     id,
     conversationId,
@@ -548,6 +591,10 @@ export default function Creating() {
                   <ul className="flex flex-col-reverse flex-1 min-h-0 pt-4 px-4 pb-2 overflow-y-auto">
                     {isWaitingForMessage && <LoadingMessage />}
 
+                    {optimisticMessage?.conversation_id === activeChat && (
+                      <MessageItem message={optimisticMessage} />
+                    )}
+
                     {jobFailure?.conversationId === activeChat && (
                       <ErrorMessage message={jobFailure.message} />
                     )}
@@ -568,45 +615,22 @@ export default function Creating() {
                       ))}
                   </ul>
 
-                  <div className="w-full shrink-0 flex bg-blue-900/30 border-t p-3 border-blue-400/20 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowParamsModal(true)}
-                      disabled={!activeChat || isGeneratingModel}
-                      className="shrink-0 lg:rounded-full rounded-2xl border border-purple-400/40 bg-purple-500/10 px-3 py-3 text-sm font-medium text-purple-300 transition-all hover:bg-purple-500/20 hover:text-purple-200 disabled:cursor-not-allowed disabled:opacity-60 md:px-4 md:py-4 flex items-center gap-1.5"
-                      title="Уточнить параметры"
-                    >
-                      <SlidersHorizontal className="w-4 h-4" />
-                      <span className="hidden sm:inline">Уточнить</span>
-                    </button>
-
-                    <input
-                      type="text"
-                      value={input}
-                      placeholder={inputPlaceholder}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                      disabled={
-                        isGeneratingRequest || !activeChat || !!activeJob
-                      }
-                      className="lg:flex-8/10 flex-7/10 bg-blue-800/30 border border-blue-400/30 lg:rounded-3xl rounded-2xl lg:px-6 lg:py-4 px-4 py-2 text-white placeholder-blue-300/50 focus:outline-none 
-                                        focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/20 text-base"
-                    />
-
-                    <button
-                      onClick={handleSend}
-                      disabled={
-                        isGeneratingRequest ||
-                        !activeChat ||
-                        !input.trim() ||
-                        !!activeJob
-                      }
-                      className="flex lg:flex-1/10 flex-2/10 lg:max-w-50 max-w-25 items-center  justify-center py-2 lg:rounded-3xl rounded-2xl transition-all 
-                                                            bg-linear-to-r text-sm from-blue-600 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
-                    >
-                      <Send className="w-5 h-5" />
-                    </button>
-                  </div>
+                  <InputSendLine
+                    value={input}
+                    placeholder={inputPlaceholder}
+                    onChange={setInput}
+                    onSend={handleSend}
+                    onAssistantSubmit={handleAssistantSubmit}
+                    isAssistantDisabled={
+                      isInputBusy || !activeChat || !input.trim()
+                    }
+                    isInputDisabled={isInputBusy || !activeChat}
+                    isSendDisabled={
+                      isInputBusy ||
+                      !activeChat ||
+                      !input.trim()
+                    }
+                  />
                 </>
               )}
             </div>
@@ -630,16 +654,6 @@ export default function Creating() {
           onChange={setNewChatName}
           onCancel={handleCancelCreateChat}
           onConfirm={handleCreateChat}
-        />
-      )}
-
-      {showParamsModal && (
-        <ParamsModal
-          value={paramsInput}
-          isSubmitting={isAssistantLoading}
-          onChange={setParamsInput}
-          onSubmit={handleAssistantSubmit}
-          onClose={() => setShowParamsModal(false)}
         />
       )}
 
