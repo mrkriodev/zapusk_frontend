@@ -3,6 +3,8 @@ WORKDIR /app/frontend
 
 COPY package*.json ./
 
+RUN npm install -g typescript
+
 RUN npm install
 
 COPY . .
