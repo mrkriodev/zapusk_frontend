@@ -9,6 +9,7 @@ type InputSendLineProps = {
   isAssistantDisabled: boolean;
   isInputDisabled: boolean;
   isSendDisabled: boolean;
+  needsAssistantPrompt: boolean;
 };
 
 export function InputSendLine({
@@ -20,6 +21,7 @@ export function InputSendLine({
   isAssistantDisabled,
   isInputDisabled,
   isSendDisabled,
+  needsAssistantPrompt,
 }: InputSendLineProps) {
     return(
         <div className="w-full shrink-0 flex bg-blue-900/30 border-t p-3 border-blue-400/20 gap-3">
@@ -27,7 +29,7 @@ export function InputSendLine({
                               type="button"
                               onClick={onAssistantSubmit}
                               disabled={isAssistantDisabled}
-                              className="shrink-0 lg:rounded-full rounded-2xl border border-purple-400/40 bg-purple-500/10 px-3 py-3 text-sm font-medium text-purple-300 transition-all hover:bg-purple-500/20 hover:text-purple-200 disabled:cursor-not-allowed disabled:opacity-60 md:px-4 md:py-4 flex items-center gap-1.5"
+                              className={`shrink-0 lg:rounded-full rounded-2xl border border-purple-400/40 bg-purple-500/10 px-3 py-3 text-sm font-medium text-purple-300 transition-all hover:bg-purple-500/20 hover:text-purple-200 md:px-4 md:py-4 flex items-center gap-1.5 ${needsAssistantPrompt ? "animate-assistant-prompt motion-reduce:animate-none" : ""}`}
                               title="Уточнить параметры"
                             >
                               <SlidersHorizontal className="w-4 h-4" />
@@ -49,8 +51,8 @@ export function InputSendLine({
                               type="button"
                               onClick={onSend}
                               disabled={isSendDisabled}
-                              className="flex lg:flex-1/10 flex-2/10 lg:max-w-50 max-w-25 items-center  justify-center py-2 lg:rounded-3xl rounded-2xl transition-all 
-                                                                    bg-linear-to-r text-sm from-blue-600 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
+                              className="flex lg:flex-1/10 flex-2/10 lg:max-w-50 max-w-25 items-center justify-center py-2 lg:rounded-3xl rounded-2xl transition-all bg-linear-to-r text-sm from-blue-600 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:from-blue-600 disabled:hover:to-purple-600"
+                              title={isSendDisabled && needsAssistantPrompt ? "Сначала уточните параметры у ассистента" : "Сгенерировать"}
                             >
                               <Send className="w-5 h-5" />
                             </button>

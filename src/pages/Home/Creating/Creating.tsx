@@ -39,9 +39,16 @@ export default function Creating() {
   // стейт для селекта чата + тянем сообщения + все кады
   const [selectedChat, setActiveChat] = useState<string | null>(null);
   const activeChat = selectedChat ?? chats[0]?.id ?? null;
-  const { data: conversationsIdData, refetch: refetchConversation } = useGetConservationByIdQuery(activeChat ?? skipToken);
+  const { currentData: conversationsIdData, refetch: refetchConversation } = useGetConservationByIdQuery(activeChat ?? skipToken);
   const messages = conversationsIdData?.messages ?? [];
   const { data: cadVersionsData } = useGetCadVersionsQuery(activeChat ?? skipToken);
+  const [assistantReadyConversationIds, setAssistantReadyConversationIds] =
+    useState<Set<string>>(() => new Set());
+  const hasAssistantResponse = Boolean(
+    activeChat &&
+      (assistantReadyConversationIds.has(activeChat) ||
+        messages.some((message) => message.role === "assistant")),
+  );
 
   // post создаем чат
   const [createConversation] = useCreateConversationMutation();
@@ -84,7 +91,7 @@ export default function Creating() {
   const handleSend = async () => {
     const text = input.trim();
 
-    if (!text || !activeChat) return;
+    if (!text || !activeChat || !hasAssistantResponse) return;
 
     const conversationId = activeChat;
     setPendingRequestConversationId(conversationId);
@@ -146,6 +153,11 @@ export default function Creating() {
       }).unwrap();
 
       setAssistantDraftParams(response.draft_params);
+      setAssistantReadyConversationIds((current) => {
+        const next = new Set(current);
+        next.add(conversationId);
+        return next;
+      });
     } catch (error) {
       console.error("Ошибка уточнения параметров:", error);
       setOptimisticMessage(null);
@@ -628,8 +640,9 @@ export default function Creating() {
                     isSendDisabled={
                       isInputBusy ||
                       !activeChat ||
-                      !input.trim()
+                      !hasAssistantResponse
                     }
+                    needsAssistantPrompt={!hasAssistantResponse}
                   />
                 </>
               )}

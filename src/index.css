@@ -15,6 +15,22 @@
   animation: arrowDown 1.5s ease-in-out infinite;
 }
 
+@keyframes assistantPrompt {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgb(192 132 252 / 0);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgb(192 132 252 / 0.16);
+    transform: scale(1.03);
+  }
+}
+
+.animate-assistant-prompt {
+  animation: assistantPrompt 1.6s ease-in-out infinite;
+}
+
 html,
 body,
 #root {
