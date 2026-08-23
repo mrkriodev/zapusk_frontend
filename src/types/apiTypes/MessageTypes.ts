@@ -1,3 +1,5 @@
+import type { JsonObject } from "./CadTypes";
+
 export type MessageRole = "user" | "assistant"
 
 export interface Message {
@@ -6,6 +8,7 @@ export interface Message {
   role: MessageRole
   content: string
   cad_state_id: string | null
+  has_model_params: boolean
   created_at: string
 }
 
@@ -20,4 +23,8 @@ export interface AssistantChatRequest {
 export interface SendMessageArgs {
   conversationId: string
   text: string
+}
+
+export interface SendMessageAdvArgs extends SendMessageArgs {
+  modelParams: JsonObject
 }

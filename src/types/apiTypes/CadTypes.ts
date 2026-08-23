@@ -19,7 +19,13 @@ export type EngineMaterial =
 
 export type CadBackend = "cadquery" | "sdf";
 
-export type CadDownloadFormat = "stl" | "step";
+export type CadDownloadFormat = "stl" | "step" | "model_params";
+
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+export interface JsonObject {
+  [key: string]: JsonValue;
+}
 
 export interface CoolingChannels {
   n?: number;
@@ -77,15 +83,19 @@ export interface Physics {
 }
 
 export interface CadFiles {
-  stl?: string;
-  step?: string;
+  stl?: string | null;
+  step?: string | null;
+  tna_stl?: string | null;
+  tna_step?: string | null;
+  model_params?: string | null;
 }
 
 export interface CadState {
   id: string;
   conversation_id: string;
-  message_id: string;
+  message_id: string | null;
   version: number;
+  base_version?: number | null;
   params: EngineParams;
   physics: Physics;
   files: CadFiles;
@@ -101,4 +111,15 @@ export interface DownloadCadFileArgs {
   conversationId: string;
   version: number;
   format: CadDownloadFormat;
+}
+
+export interface DownloadCadFileResult {
+  blob: Blob;
+  fileName?: string;
+}
+
+export interface ReviseCadArgs {
+  conversationId: string;
+  version: number;
+  modelParams: JsonObject;
 }

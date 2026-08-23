@@ -63,6 +63,16 @@ export type CadModel = {
   time: string
 }
 
+export type CadVersionModel = {
+  id: string
+  conversationId: string
+  version: number
+  createdAt: string
+  hasStl: boolean
+  hasStep: boolean
+  hasModelParams: boolean
+}
+
 // modal props
 
 export type DeleteModalProps = {
@@ -79,10 +89,11 @@ export type CreateModalProps = {
 }
 
 export type CadModalListProps = {
-  models: CadModel[]
+  models: CadVersionModel[]
   isLoading: boolean
   isDownloadingId: string | null
   onDownload: (model: CadModel) => void
+  onEditModelParams: (model: CadVersionModel) => void
   onClose: () => void
   popoverRef: RefObject<HTMLDivElement | null>
 }

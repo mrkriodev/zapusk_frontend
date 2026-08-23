@@ -6,7 +6,7 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
 type InputSendLineProps = {
   value: string;
@@ -18,6 +18,14 @@ type InputSendLineProps = {
   isInputDisabled: boolean;
   isSendDisabled: boolean;
   needsAssistantPrompt: boolean;
+  attachedFileName: string | null;
+  attachmentError: string | null;
+  canDownloadModelParams: boolean;
+  canReviseFromAttachment: boolean;
+  onAttachFile: (file: File) => void;
+  onClearAttachment: () => void;
+  onDownloadModelParams: () => void;
+  onAdvancedSubmit: () => void;
 };
 
 export function InputSendLine({
@@ -30,12 +38,19 @@ export function InputSendLine({
   isInputDisabled,
   isSendDisabled,
   needsAssistantPrompt,
+  attachedFileName,
+  attachmentError,
+  canDownloadModelParams,
+  canReviseFromAttachment,
+  onAttachFile,
+  onClearAttachment,
+  onDownloadModelParams,
+  onAdvancedSubmit,
 }: InputSendLineProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
 
   const clearAttachedFile = () => {
-    setAttachedFile(null);
+    onClearAttachment();
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -59,9 +74,10 @@ export function InputSendLine({
 
         <button
           type="button"
-          disabled
-          className="flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-300 opacity-50"
-          title="FEM-тест будет доступен после подключения API"
+          onClick={onDownloadModelParams}
+          disabled={!canDownloadModelParams || isInputDisabled}
+          className="flex items-center gap-1.5 rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-300 transition-all hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+          title="Скачать JSON-чертёж текущей CAD-версии"
         >
           <FlaskConical className="h-3.5 w-3.5 shrink-0" />
           <span>FEM-тест</span>
@@ -69,9 +85,10 @@ export function InputSendLine({
 
         <button
           type="button"
-          disabled
-          className="flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-300 opacity-50"
-          title="Обновление по FEM будет доступно после подключения API"
+          onClick={onAdvancedSubmit}
+          disabled={!canReviseFromAttachment || isInputDisabled}
+          className="flex items-center gap-1.5 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-300 transition-all hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+          title="Отправить приложенный JSON-чертёж на пересборку"
         >
           <RefreshCcw className="h-3.5 w-3.5 shrink-0" />
           <span className="hidden sm:inline">Обновить по FEM</span>
@@ -83,13 +100,16 @@ export function InputSendLine({
           type="file"
           accept=".json,application/json"
           className="hidden"
-          onChange={(event) => setAttachedFile(event.target.files?.[0] ?? null)}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onAttachFile(file);
+          }}
         />
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all ${
-            attachedFile
+            attachedFileName
               ? "border-blue-400/60 bg-blue-500/20 text-blue-200"
               : "border-blue-400/30 bg-blue-800/20 text-blue-400 hover:bg-blue-800/40 hover:text-blue-200"
           }`}
@@ -97,9 +117,9 @@ export function InputSendLine({
         >
           <Paperclip className="h-3.5 w-3.5 shrink-0" />
           <span className="max-w-[120px] truncate">
-            {attachedFile ? attachedFile.name : "JSON"}
+            {attachedFileName ?? "JSON"}
           </span>
-          {attachedFile && (
+          {attachedFileName && (
             <span
               role="button"
               tabIndex={0}
@@ -122,6 +142,8 @@ export function InputSendLine({
           )}
         </button>
       </div>
+
+      {attachmentError && <p className="text-sm text-red-300">{attachmentError}</p>}
 
       <div className="flex gap-2 md:gap-3">
         <input

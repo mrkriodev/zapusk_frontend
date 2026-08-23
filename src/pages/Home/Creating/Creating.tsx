@@ -1,8 +1,8 @@
 import { Menu, Plus, Sparkles, X } from "lucide-react";
 import { useEffect, useState, useRef, useMemo } from "react";
-import type { CadModel, Chat } from "../../../types/UITypes/creatingTypes";
+import type { CadVersionModel, Chat } from "../../../types/UITypes/creatingTypes";
 import type { Message } from "../../../types/apiTypes/MessageTypes";
-import type { CadDownloadFormat, EngineParams } from "../../../types/apiTypes/CadTypes";
+import type { CadDownloadFormat, JsonObject } from "../../../types/apiTypes/CadTypes";
 import ChatItem from "./components/chat/ChatItem";
 import ErrorMessage from "./components/chat/ErrorMessage";
 import LoadingMessage from "./components/chat/LoadingMessage";
@@ -13,17 +13,21 @@ import {
   useChatWithAssistantMutation,
   useCreateConversationMutation,
   useDeleteConversationMutation,
-  useGenerateConversationMutation,
   useGetConservationByIdQuery,
   useGetConversationsQuery,
+  useSendAdvancedMessageMutation,
+  useSendMessageMutation,
 } from "../../../api/repository/ConversationsApi";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useGetJobByIdQuery } from "../../../api/repository/JobsApi";
 import {
   useGetCadVersionsQuery,
+  useLazyGetCadModelParamsQuery,
   useLazyDownloadCadFileQuery,
+  useReviseCadMutation,
 } from "../../../api/repository/CadApi";
 import CadModalList from "./components/modals/CadModalList";
+import ModelParamsModal from "./components/modals/ModelParamsModal";
 import { JOB_POLL_TIMEOUT_MS } from "../../../constants/constants";
 import { InputSendLine } from "./components/chat/InputSendLine";
 
@@ -40,15 +44,8 @@ export default function Creating() {
   const [selectedChat, setActiveChat] = useState<string | null>(null);
   const activeChat = selectedChat ?? chats[0]?.id ?? null;
   const { currentData: conversationsIdData, refetch: refetchConversation } = useGetConservationByIdQuery(activeChat ?? skipToken);
-  const messages = conversationsIdData?.messages ?? [];
+  const messages = useMemo(() => conversationsIdData?.messages ?? [], [conversationsIdData?.messages]);
   const { data: cadVersionsData } = useGetCadVersionsQuery(activeChat ?? skipToken);
-  const [assistantReadyConversationIds, setAssistantReadyConversationIds] =
-    useState<Set<string>>(() => new Set());
-  const hasAssistantResponse = Boolean(
-    activeChat &&
-      (assistantReadyConversationIds.has(activeChat) ||
-        messages.some((message) => message.role === "assistant")),
-  );
 
   // post создаем чат
   const [createConversation] = useCreateConversationMutation();
@@ -65,24 +62,29 @@ export default function Creating() {
   const modelsPopoverRef = useRef<HTMLDivElement | null>(null);
 
   const [input, setInput] = useState(""); // стейт для строки ввода
+  const [attachedModelParams, setAttachedModelParams] = useState<JsonObject | null>(null);
+  const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [pendingRequestConversationId, setPendingRequestConversationId] =
     useState<string | null>(null);
   const [optimisticMessage, setOptimisticMessage] = useState<Message | null>(
     null,
   );
   
-  // стейт для хранения параметров ассиста (из ответа ручки)
-  const [assistantDraftParams, setAssistantDraftParams] = useState<EngineParams | null>(null);
-
   // пост отправка сообщения assist
   const [chatWithAssistant, { isLoading: isAssistantLoading }] = useChatWithAssistantMutation();
   
-  // пост отправка сообщения generate
-  const [generateConversation, { isLoading: isGeneratingRequest }] = useGenerateConversationMutation();
+  const [sendMessage, { isLoading: isSendingMessage }] = useSendMessageMutation();
+  const [sendAdvancedMessage, { isLoading: isSendingAdvancedMessage }] = useSendAdvancedMessageMutation();
   
   // гет и стейт загрузка cad файла
   const [downloadCadFileTrigger, { isFetching: isDownloadingCadFile }] = useLazyDownloadCadFileQuery();
+  const [getCadModelParams, { isFetching: isLoadingModelParams }] = useLazyGetCadModelParamsQuery();
+  const [reviseCad, { isLoading: isRevisingCad }] = useReviseCadMutation();
   const [downloadingCadItemId, setDownloadingCadItemId] = useState<string | null>(null);
+  const [editingCadVersion, setEditingCadVersion] = useState<CadVersionModel | null>(null);
+  const [modelParamsText, setModelParamsText] = useState("");
+  const [modelParamsError, setModelParamsError] = useState<string | null>(null);
   
   // гет списка всех кадов
   const { data: modalCadVersionsData, isLoading: isModalCadVersionsLoading } = useGetCadVersionsQuery(modelsPopoverChatId ?? skipToken);
@@ -91,7 +93,7 @@ export default function Creating() {
   const handleSend = async () => {
     const text = input.trim();
 
-    if (!text || !activeChat || !hasAssistantResponse) return;
+    if (!text || !activeChat) return;
 
     const conversationId = activeChat;
     setPendingRequestConversationId(conversationId);
@@ -102,6 +104,7 @@ export default function Creating() {
       role: "user",
       content: text,
       cad_state_id: null,
+      has_model_params: false,
       created_at: new Date().toISOString(),
     });
 
@@ -110,11 +113,7 @@ export default function Creating() {
         current?.conversationId === conversationId ? null : current,
       );
 
-      const job = await generateConversation({
-        conversationId,
-        text,
-        ...(assistantDraftParams ? { params: assistantDraftParams } : {}),
-      }).unwrap();
+      const job = await sendMessage({ conversationId, text }).unwrap();
 
       setActiveJob({
         jobId: job.job_id,
@@ -143,21 +142,15 @@ export default function Creating() {
       role: "user",
       content: text,
       cad_state_id: null,
+      has_model_params: false,
       created_at: new Date().toISOString(),
     });
 
     try {
-      const response = await chatWithAssistant({
+      await chatWithAssistant({
         conversationId,
         text,
       }).unwrap();
-
-      setAssistantDraftParams(response.draft_params);
-      setAssistantReadyConversationIds((current) => {
-        const next = new Set(current);
-        next.add(conversationId);
-        return next;
-      });
     } catch (error) {
       console.error("Ошибка уточнения параметров:", error);
       setOptimisticMessage(null);
@@ -298,11 +291,6 @@ export default function Creating() {
     setIsSidebarOpen(false);
     setModelsPopoverChatId(null);
   };
-  // сброс введеного текста при изменении чата
-  useEffect(() => {
-    setAssistantDraftParams(null);
-  }, [activeChat]);
-
   useEffect(() => {
     if (!optimisticMessage) return;
 
@@ -316,7 +304,8 @@ export default function Creating() {
     );
 
     if (hasServerMessage) {
-      setOptimisticMessage(null);
+      const clearId = window.setTimeout(() => setOptimisticMessage(null), 0);
+      return () => window.clearTimeout(clearId);
     }
   }, [messages, optimisticMessage]);
 
@@ -348,52 +337,132 @@ export default function Creating() {
         (activeJob && activeJob.conversationId === activeChat)),
   );
   const isGeneratingModel = Boolean(activeJob);
-  const isInputBusy = isAssistantLoading || isGeneratingRequest || isGeneratingModel;
+  const isInputBusy = isAssistantLoading || isSendingMessage || isSendingAdvancedMessage || isRevisingCad || isGeneratingModel;
 
   const showEmptyChatsState = !conversationsLoading && !conversationsError && !hasChats; // флаг отсутствия чатов
   const inputPlaceholder = isGeneratingModel ? "Идет генерация модели" : "Опишите нужную вам деталь";
 
-  // чето вроде маппера для передачи кад моделей в модлку где все кады
+  const startJob = (jobId: string, conversationId: string) => {
+    setJobFailure((current) => current?.conversationId === conversationId ? null : current);
+    setActiveJob({ jobId, conversationId });
+  };
+
+  const parseModelParams = (value: string): JsonObject | null => {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+        throw new Error("JSON должен содержать объект параметров.");
+      }
+      return parsed as JsonObject;
+    } catch (error) {
+      setAttachmentError(error instanceof Error && error.message !== "Unexpected end of JSON input" ? error.message : "Не удалось прочитать JSON-чертёж.");
+      return null;
+    }
+  };
+
+  const handleAttachModelParams = async (file: File) => {
+    try {
+      const parsed = parseModelParams(await file.text());
+      if (!parsed) {
+        setAttachedModelParams(null);
+        setAttachedFileName(null);
+        return;
+      }
+      setAttachedModelParams(parsed);
+      setAttachedFileName(file.name);
+      setAttachmentError(null);
+    } catch {
+      setAttachedModelParams(null);
+      setAttachedFileName(null);
+      setAttachmentError("Не удалось прочитать выбранный файл.");
+    }
+  };
+
+  const clearAttachment = () => {
+    setAttachedModelParams(null);
+    setAttachedFileName(null);
+    setAttachmentError(null);
+  };
+
+  const handleAdvancedSubmit = async () => {
+    if (!activeChat || !attachedModelParams) return;
+    const conversationId = activeChat;
+    const text = input.trim() || "Результаты FEM-расчёта";
+    setPendingRequestConversationId(conversationId);
+    setOptimisticMessage({ id: `optimistic-${crypto.randomUUID()}`, conversation_id: conversationId, role: "user", content: text, cad_state_id: null, has_model_params: true, created_at: new Date().toISOString() });
+    try {
+      const job = await sendAdvancedMessage({ conversationId, text, modelParams: attachedModelParams }).unwrap();
+      setInput("");
+      clearAttachment();
+      startJob(job.job_id, conversationId);
+    } catch (error) {
+      console.error("Ошибка отправки FEM-чертежа:", error);
+      setOptimisticMessage(null);
+    } finally {
+      setPendingRequestConversationId(null);
+    }
+  };
+
+  const saveBlob = (blob: Blob, fileName: string) => {
+    const fileUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(fileUrl);
+  };
+
+  const handleDownloadCurrentModelParams = async () => {
+    const currentCad = conversationsIdData?.current_cad;
+    if (!activeChat || !currentCad?.files.model_params) return;
+    try {
+      setDownloadingCadItemId(`current-${currentCad.id}-params`);
+      const modelParams = await getCadModelParams({ conversationId: activeChat, version: currentCad.version }).unwrap();
+      saveBlob(new Blob([JSON.stringify(modelParams, null, 2)], { type: "application/json" }), `model_v${currentCad.version}_params.json`);
+    } catch (error) {
+      console.error("Ошибка скачивания JSON-чертежа:", error);
+    } finally {
+      setDownloadingCadItemId(null);
+    }
+  };
+
+  const handleEditModelParams = async (model: CadVersionModel) => {
+    setEditingCadVersion(model);
+    setModelParamsText("");
+    setModelParamsError(null);
+    try {
+      const modelParams = await getCadModelParams({ conversationId: model.conversationId, version: model.version }).unwrap();
+      setModelParamsText(JSON.stringify(modelParams, null, 2));
+    } catch (error) {
+      console.error("Ошибка загрузки JSON-чертежа:", error);
+      setModelParamsError("Не удалось загрузить параметры модели.");
+    }
+  };
+
+  const handleReviseCad = async () => {
+    if (!editingCadVersion) return;
+    const modelParams = parseModelParams(modelParamsText);
+    if (!modelParams) {
+      setModelParamsError("JSON содержит ошибку. Исправьте его перед отправкой.");
+      return;
+    }
+    try {
+      const job = await reviseCad({ conversationId: editingCadVersion.conversationId, version: editingCadVersion.version, modelParams }).unwrap();
+      startJob(job.job_id, editingCadVersion.conversationId);
+      setEditingCadVersion(null);
+      setModelParamsError(null);
+    } catch (error) {
+      console.error("Ошибка перегенерации CAD:", error);
+      setModelParamsError("Не удалось запустить перегенерацию модели.");
+    }
+  };
+
+  // Реальные CAD-версии диалога, возвращаемые backend.
   const cadModalModels = useMemo(() => {
     const items = modalCadVersionsData?.items ?? [];
-
-    return items.flatMap((item) => {
-      const formattedTime = new Date(item.created_at).toLocaleString("ru-RU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-      const files: CadModel[] = [];
-
-      if (item.files.stl) {
-        files.push({
-          id: `${item.id}-stl`,
-          conversationId: item.conversation_id,
-          version: item.version,
-          format: "stl",
-          fileName: `model-v${item.version}.stl`,
-          name: `Модель v${item.version}.stl`,
-          time: `STL · ${formattedTime}`,
-        });
-      }
-
-      if (item.files.step) {
-        files.push({
-          id: `${item.id}-step`,
-          conversationId: item.conversation_id,
-          version: item.version,
-          format: "step",
-          fileName: `model-v${item.version}.step`,
-          name: `Модель v${item.version}.step`,
-          time: `STEP · ${formattedTime}`,
-        });
-      }
-
-      return files;
-    });
+    return items.map((item): CadVersionModel => ({ id: item.id, conversationId: item.conversation_id, version: item.version, createdAt: item.created_at, hasStl: Boolean(item.files.stl), hasStep: Boolean(item.files.step), hasModelParams: Boolean(item.files.model_params) }));
   }, [modalCadVersionsData?.items]);
 
   // 
@@ -413,21 +482,13 @@ export default function Creating() {
     try {
       setDownloadingCadItemId(id);
 
-      const blob = await downloadCadFileTrigger({
+      const downloadedFile = await downloadCadFileTrigger({
         conversationId,
         version,
         format,
       }).unwrap();
 
-      const fileUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-
-      link.href = fileUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(fileUrl);
+      saveBlob(downloadedFile.blob, downloadedFile.fileName ?? fileName);
     } catch (error) {
       console.error("Ошибка скачивания CAD-файла:", error);
     } finally {
@@ -640,9 +701,17 @@ export default function Creating() {
                     isSendDisabled={
                       isInputBusy ||
                       !activeChat ||
-                      !hasAssistantResponse
+                      !input.trim()
                     }
-                    needsAssistantPrompt={!hasAssistantResponse}
+                    needsAssistantPrompt={false}
+                    attachedFileName={attachedFileName}
+                    attachmentError={attachmentError}
+                    canDownloadModelParams={Boolean(conversationsIdData?.current_cad?.files.model_params)}
+                    canReviseFromAttachment={Boolean(attachedModelParams && activeChat)}
+                    onAttachFile={handleAttachModelParams}
+                    onClearAttachment={clearAttachment}
+                    onDownloadModelParams={handleDownloadCurrentModelParams}
+                    onAdvancedSubmit={handleAdvancedSubmit}
                   />
                 </>
               )}
@@ -676,8 +745,27 @@ export default function Creating() {
           isLoading={isModalCadVersionsLoading}
           isDownloadingId={isDownloadingCadFile ? downloadingCadItemId : null}
           onDownload={handleDownloadCadFile}
+          onEditModelParams={handleEditModelParams}
           onClose={() => setModelsPopoverChatId(null)}
           popoverRef={modelsPopoverRef}
+        />
+      )}
+
+      {editingCadVersion && (
+        <ModelParamsModal
+          version={editingCadVersion.version}
+          value={modelParamsText}
+          error={modelParamsError}
+          isLoading={isLoadingModelParams}
+          isSubmitting={isRevisingCad}
+          onChange={(value) => {
+            setModelParamsText(value);
+            setModelParamsError(null);
+          }}
+          onCancel={() => {
+            if (!isRevisingCad) setEditingCadVersion(null);
+          }}
+          onSubmit={handleReviseCad}
         />
       )}
     </div>

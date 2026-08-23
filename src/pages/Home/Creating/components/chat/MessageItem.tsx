@@ -29,6 +29,9 @@ export default function MessageItem({
             }`}
         >
         <p className="leading-relaxed lg:text-md text-sm">{message.content}</p>
+        {isUser && message.has_model_params && (
+            <p className="mt-2 text-xs text-blue-100/80">Прикреплён FEM-чертёж</p>
+        )}
         {hasFile && (
             <button
                 type="button"
