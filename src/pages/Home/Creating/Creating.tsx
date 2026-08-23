@@ -1,5 +1,6 @@
 import { Menu, Plus, Sparkles, X } from "lucide-react";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
+import { useDispatch } from "react-redux";
 import type { CadVersionModel, Chat } from "../../../types/UITypes/creatingTypes";
 import type { Message } from "../../../types/apiTypes/MessageTypes";
 import type { CadDownloadFormat, EngineParams, JsonObject } from "../../../types/apiTypes/CadTypes";
@@ -30,9 +31,12 @@ import CadModalList from "./components/modals/CadModalList";
 import ModelParamsModal from "./components/modals/ModelParamsModal";
 import { JOB_POLL_TIMEOUT_MS } from "../../../constants/constants";
 import { InputSendLine } from "./components/chat/InputSendLine";
+import { baseApi } from "../../../api/baseApi";
+import type { AppDispatch } from "../../../store/store";
 
 
 export default function Creating() {
+  const dispatch = useDispatch<AppDispatch>();
   // гет и мемо список чатов
   const { data: conversationsData, isLoading: conversationsLoading, error: conversationsError} = useGetConversationsQuery();
   const chats = useMemo(
@@ -43,7 +47,7 @@ export default function Creating() {
   // стейт для селекта чата + тянем сообщения + все кады
   const [selectedChat, setActiveChat] = useState<string | null>(null);
   const activeChat = selectedChat ?? chats[0]?.id ?? null;
-  const { currentData: conversationsIdData, refetch: refetchConversation } = useGetConservationByIdQuery(activeChat ?? skipToken);
+  const { currentData: conversationsIdData } = useGetConservationByIdQuery(activeChat ?? skipToken);
   const messages = useMemo(() => conversationsIdData?.messages ?? [], [conversationsIdData?.messages]);
   const { data: cadVersionsData } = useGetCadVersionsQuery(activeChat ?? skipToken);
   const [assistantReadyConversationIds, setAssistantReadyConversationIds] = useState<Set<string>>(() => new Set());
@@ -122,10 +126,7 @@ export default function Creating() {
         ...(assistantDraftParams ? { params: assistantDraftParams } : {}),
       }).unwrap();
 
-      setActiveJob({
-        jobId: job.job_id,
-        conversationId,
-      });
+      startJob(job.job_id, conversationId);
     } catch (error) {
       console.error("Ошибка отправки сообщения:", error);
       setOptimisticMessage(null);
@@ -178,13 +179,27 @@ export default function Creating() {
   const canPollJob = Boolean(activeJob);
 
   // хук поллинга сообщения
-  const { data: jobData, error: jobError } = useGetJobByIdQuery(
+  const {
+    currentData: jobData,
+    error: jobError,
+    isError: isJobError,
+  } = useGetJobByIdQuery(
     activeJob?.jobId ?? skipToken,
     {
       pollingInterval: canPollJob ? 2000 : 0,
       skipPollingIfUnfocused: true,
     },
   );
+
+  const refreshCompletedConversation = useCallback((conversationId: string) => {
+    dispatch(
+      baseApi.util.invalidateTags([
+        "Conversations",
+        { type: "Messages", id: conversationId },
+        { type: "Cad", id: conversationId },
+      ]),
+    );
+  }, [dispatch]);
 
   // юзеффект таймер поллинга
   useEffect(() => {
@@ -198,60 +213,63 @@ export default function Creating() {
           "Генерация заняла слишком много времени. Попробуйте уточнить запрос и запустить её снова.",
       });
       setActiveJob(null);
-      refetchConversation();
+      refreshCompletedConversation(activeJob.conversationId);
     }, JOB_POLL_TIMEOUT_MS);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [activeJob, refetchConversation]);
+  }, [activeJob, refreshCompletedConversation]);
 
   // юзеффект ошибки поллинга
   useEffect(() => {
-    if (!jobError) return;
+    if (!activeJob || !isJobError || !jobError) return;
 
     console.error("Ошибка polling job:", jobError);
-    if (activeJob) {
+    const failureTimeoutId = window.setTimeout(() => {
       setJobFailure({
         conversationId: activeJob.conversationId,
         message:
           "Не удалось получить статус генерации. Попробуйте запустить задачу ещё раз.",
       });
-    }
-    setActiveJob(null);
-  }, [jobError, activeJob]);
+      setActiveJob(null);
+      refreshCompletedConversation(activeJob.conversationId);
+    }, 0);
+
+    return () => window.clearTimeout(failureTimeoutId);
+  }, [jobError, isJobError, activeJob, refreshCompletedConversation]);
 
   // юзеффект отслеживания статуса поллинга
   useEffect(() => {
-    if (!jobData || !activeJob) return;
+    if (!jobData || !activeJob || jobData.id !== activeJob.jobId) return;
 
     if (jobData.status === "done") {
-      setJobFailure((current) =>
-        current?.conversationId === activeJob.conversationId ? null : current,
-      );
-      setActiveJob(null);
+      const completionTimeoutId = window.setTimeout(() => {
+        setJobFailure((current) =>
+          current?.conversationId === activeJob.conversationId ? null : current,
+        );
+        setActiveJob(null);
+        refreshCompletedConversation(activeJob.conversationId);
+      }, 0);
 
-      if (activeChat === activeJob.conversationId) {
-        refetchConversation();
-      }
-
-      return;
+      return () => window.clearTimeout(completionTimeoutId);
     }
 
     if (jobData.status === "error") {
-      setJobFailure({
-        conversationId: activeJob.conversationId,
-        message:
-          jobData.error ??
-          "Во время генерации произошла ошибка. Уточните запрос и попробуйте снова.",
-      });
-      setActiveJob(null);
+      const failureTimeoutId = window.setTimeout(() => {
+        setJobFailure({
+          conversationId: activeJob.conversationId,
+          message:
+            jobData.error ??
+            "Во время генерации произошла ошибка. Уточните запрос и попробуйте снова.",
+        });
+        setActiveJob(null);
+        refreshCompletedConversation(activeJob.conversationId);
+      }, 0);
 
-      if (activeChat === activeJob.conversationId) {
-        refetchConversation();
-      }
+      return () => window.clearTimeout(failureTimeoutId);
     }
-  }, [jobData, activeJob, activeChat, refetchConversation]);
+  }, [jobData, activeJob, refreshCompletedConversation]);
 
   // функция удаления чата
   const handleDeleteChat = async (chat: Chat) => {
