@@ -2,7 +2,7 @@ import { Menu, Plus, Sparkles, X } from "lucide-react";
 import { useEffect, useState, useRef, useMemo } from "react";
 import type { CadVersionModel, Chat } from "../../../types/UITypes/creatingTypes";
 import type { Message } from "../../../types/apiTypes/MessageTypes";
-import type { CadDownloadFormat, JsonObject } from "../../../types/apiTypes/CadTypes";
+import type { CadDownloadFormat, EngineParams, JsonObject } from "../../../types/apiTypes/CadTypes";
 import ChatItem from "./components/chat/ChatItem";
 import ErrorMessage from "./components/chat/ErrorMessage";
 import LoadingMessage from "./components/chat/LoadingMessage";
@@ -13,10 +13,10 @@ import {
   useChatWithAssistantMutation,
   useCreateConversationMutation,
   useDeleteConversationMutation,
+  useGenerateConversationMutation,
   useGetConservationByIdQuery,
   useGetConversationsQuery,
   useSendAdvancedMessageMutation,
-  useSendMessageMutation,
 } from "../../../api/repository/ConversationsApi";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useGetJobByIdQuery } from "../../../api/repository/JobsApi";
@@ -46,6 +46,8 @@ export default function Creating() {
   const { currentData: conversationsIdData, refetch: refetchConversation } = useGetConservationByIdQuery(activeChat ?? skipToken);
   const messages = useMemo(() => conversationsIdData?.messages ?? [], [conversationsIdData?.messages]);
   const { data: cadVersionsData } = useGetCadVersionsQuery(activeChat ?? skipToken);
+  const [assistantReadyConversationIds, setAssistantReadyConversationIds] = useState<Set<string>>(() => new Set());
+  const hasAssistantResponse = Boolean(activeChat && (assistantReadyConversationIds.has(activeChat) || messages.some((message) => message.role === "assistant")));
 
   // post создаем чат
   const [createConversation] = useCreateConversationMutation();
@@ -70,11 +72,12 @@ export default function Creating() {
   const [optimisticMessage, setOptimisticMessage] = useState<Message | null>(
     null,
   );
+  const [assistantDraftParams, setAssistantDraftParams] = useState<EngineParams | null>(null);
   
   // пост отправка сообщения assist
   const [chatWithAssistant, { isLoading: isAssistantLoading }] = useChatWithAssistantMutation();
   
-  const [sendMessage, { isLoading: isSendingMessage }] = useSendMessageMutation();
+  const [generateConversation, { isLoading: isGeneratingRequest }] = useGenerateConversationMutation();
   const [sendAdvancedMessage, { isLoading: isSendingAdvancedMessage }] = useSendAdvancedMessageMutation();
   
   // гет и стейт загрузка cad файла
@@ -93,7 +96,7 @@ export default function Creating() {
   const handleSend = async () => {
     const text = input.trim();
 
-    if (!text || !activeChat) return;
+    if (!text || !activeChat || !hasAssistantResponse) return;
 
     const conversationId = activeChat;
     setPendingRequestConversationId(conversationId);
@@ -113,7 +116,11 @@ export default function Creating() {
         current?.conversationId === conversationId ? null : current,
       );
 
-      const job = await sendMessage({ conversationId, text }).unwrap();
+      const job = await generateConversation({
+        conversationId,
+        text,
+        ...(assistantDraftParams ? { params: assistantDraftParams } : {}),
+      }).unwrap();
 
       setActiveJob({
         jobId: job.job_id,
@@ -147,10 +154,16 @@ export default function Creating() {
     });
 
     try {
-      await chatWithAssistant({
+      const response = await chatWithAssistant({
         conversationId,
         text,
       }).unwrap();
+      setAssistantDraftParams(response.draft_params);
+      setAssistantReadyConversationIds((current) => {
+        const next = new Set(current);
+        next.add(conversationId);
+        return next;
+      });
     } catch (error) {
       console.error("Ошибка уточнения параметров:", error);
       setOptimisticMessage(null);
@@ -291,6 +304,12 @@ export default function Creating() {
     setIsSidebarOpen(false);
     setModelsPopoverChatId(null);
   };
+
+  useEffect(() => {
+    const resetId = window.setTimeout(() => setAssistantDraftParams(null), 0);
+    return () => window.clearTimeout(resetId);
+  }, [activeChat]);
+
   useEffect(() => {
     if (!optimisticMessage) return;
 
@@ -337,7 +356,7 @@ export default function Creating() {
         (activeJob && activeJob.conversationId === activeChat)),
   );
   const isGeneratingModel = Boolean(activeJob);
-  const isInputBusy = isAssistantLoading || isSendingMessage || isSendingAdvancedMessage || isRevisingCad || isGeneratingModel;
+  const isInputBusy = isAssistantLoading || isGeneratingRequest || isSendingAdvancedMessage || isRevisingCad || isGeneratingModel;
 
   const showEmptyChatsState = !conversationsLoading && !conversationsError && !hasChats; // флаг отсутствия чатов
   const inputPlaceholder = isGeneratingModel ? "Идет генерация модели" : "Опишите нужную вам деталь";
@@ -701,9 +720,9 @@ export default function Creating() {
                     isSendDisabled={
                       isInputBusy ||
                       !activeChat ||
-                      !input.trim()
+                      !hasAssistantResponse
                     }
-                    needsAssistantPrompt={false}
+                    needsAssistantPrompt={!hasAssistantResponse}
                     attachedFileName={attachedFileName}
                     attachmentError={attachmentError}
                     canDownloadModelParams={Boolean(conversationsIdData?.current_cad?.files.model_params)}
