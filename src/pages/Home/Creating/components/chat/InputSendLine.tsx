@@ -1,5 +1,5 @@
 import {
-  FlaskConical,
+  Download,
   Paperclip,
   RefreshCcw,
   Send,
@@ -79,8 +79,8 @@ export function InputSendLine({
           className="flex items-center gap-1.5 rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-300 transition-all hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
           title="Скачать JSON-чертёж текущей CAD-версии"
         >
-          <FlaskConical className="h-3.5 w-3.5 shrink-0" />
-          <span>FEM-тест</span>
+         <Download className=" inline h-3.5 w-3.5" />
+          <span>Параметры</span>
         </button>
 
         <button
