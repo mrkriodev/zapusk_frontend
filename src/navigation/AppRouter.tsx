@@ -3,6 +3,7 @@ import Profile from '../pages/Profile/Profile';
 import Header from '../components/Header';
 import About from '../pages/About/About';
 import Creating from '../pages/Home/Creating/Creating';
+import Stats from '../pages/Stats/Stats';
 
 
 export default function AppRouter(){
@@ -16,6 +17,7 @@ export default function AppRouter(){
                     <Route path="/profile" element={<Profile />} />
                     {/* <Route path="/creating" element={<Creating />} /> */}
                     <Route path="/about" element={<About />} />
+                    <Route path="/statistics" element={<Stats />} />
                 </Routes>
             </BrowserRouter>
         </>
