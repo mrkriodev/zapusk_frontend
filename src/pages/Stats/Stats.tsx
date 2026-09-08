@@ -1,4 +1,4 @@
-import { Database, FileText, FunctionSquare, Info, Layers } from 'lucide-react';
+import { FileText, FunctionSquare, Layers } from 'lucide-react';
 import { CollectionBadge } from './components/CollectionBadge';
 import { ProgressBar } from './components/ProgressBar';
 import { collectionColors, type CollectionName } from './statsConfig';
