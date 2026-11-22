@@ -22,6 +22,9 @@ export interface Job {
   id: string;
   conversation_id: string;
   status: JobStatus;
+  kind?: "cad" | "fem";
+  result_url?: string | null;
+  error_code?: string | null;
   progress: JobProgress | null;
   result: JobResult | null;
   error: string | null;

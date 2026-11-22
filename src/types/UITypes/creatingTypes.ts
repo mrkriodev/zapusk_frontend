@@ -93,7 +93,6 @@ export type CadModalListProps = {
   isLoading: boolean
   isDownloadingId: string | null
   onDownload: (model: CadModel) => void
-  onEditModelParams: (model: CadVersionModel) => void
   onClose: () => void
   popoverRef: RefObject<HTMLDivElement | null>
 }

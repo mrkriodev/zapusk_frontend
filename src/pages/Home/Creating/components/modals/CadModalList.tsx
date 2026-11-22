@@ -1,4 +1,4 @@
-import { Download, FileJson, Package, X } from "lucide-react";
+import { Download, Package, X } from "lucide-react";
 import type { CadModel, CadModalListProps } from "../../../../../types/UITypes/creatingTypes";
 
 const downloadModel = (model: CadModalListProps["models"][number], format: "stl" | "step" | "model_params"): CadModel => ({
@@ -11,7 +11,7 @@ const downloadModel = (model: CadModalListProps["models"][number], format: "stl"
   time: format.toUpperCase(),
 });
 
-export default function CadModalList({ models, isLoading, isDownloadingId, onDownload, onEditModelParams, onClose, popoverRef }: CadModalListProps) {
+export default function CadModalList({ models, isLoading, isDownloadingId, onDownload, onClose, popoverRef }: CadModalListProps) {
   return (
     <div ref={popoverRef} className="fixed left-3 right-3 top-28 z-60 lg:left-[calc(20vw+24px)] lg:right-auto lg:top-36 lg:w-80">
       <div className="overflow-hidden rounded-xl border border-blue-400/30 bg-blue-950/98 shadow-2xl shadow-blue-950/80 backdrop-blur-md">
@@ -29,7 +29,7 @@ export default function CadModalList({ models, isLoading, isDownloadingId, onDow
               <div className="flex flex-wrap gap-2">
                 {model.hasStl && <button type="button" onClick={() => onDownload(downloadModel(model, "stl"))} disabled={isDownloadingId === `${model.id}-stl`} className="rounded-md border border-blue-400/30 px-2 py-1 text-xs text-blue-200 hover:bg-blue-800/50 disabled:opacity-50"><Download className="mr-1 inline h-3 w-3" />STL</button>}
                 {model.hasStep && <button type="button" onClick={() => onDownload(downloadModel(model, "step"))} disabled={isDownloadingId === `${model.id}-step`} className="rounded-md border border-blue-400/30 px-2 py-1 text-xs text-blue-200 hover:bg-blue-800/50 disabled:opacity-50"><Download className="mr-1 inline h-3 w-3" />STEP</button>}
-                {model.hasModelParams && <><button type="button" onClick={() => onDownload(downloadModel(model, "model_params"))} disabled={isDownloadingId === `${model.id}-model_params`} className="rounded-md border border-emerald-400/30 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-900/40 disabled:opacity-50"><Download className="mr-1 inline h-3 w-3" />JSON</button><button type="button" onClick={() => onEditModelParams(model)} className="rounded-md border border-emerald-400/30 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-900/40"><FileJson className="mr-1 inline h-3 w-3" />Править</button></>}
+                {model.hasModelParams && <button type="button" onClick={() => onDownload(downloadModel(model, "model_params"))} disabled={isDownloadingId === `${model.id}-model_params`} className="rounded-md border border-emerald-400/30 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-900/40 disabled:opacity-50"><Download className="mr-1 inline h-3 w-3" />JSON</button>}
               </div>
             </section>
           ))}

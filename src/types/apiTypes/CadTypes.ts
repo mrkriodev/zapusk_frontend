@@ -45,6 +45,7 @@ export interface CustomFeature {
 }
 
 export interface EngineParams {
+  product_id?: string;
   thrust_N?: number;
   Pc_MPa?: number;
   fuel?: Fuel;
@@ -122,4 +123,5 @@ export interface ReviseCadArgs {
   conversationId: string;
   version: number;
   modelParams: JsonObject;
+  femRunId?: string;
 }

@@ -42,10 +42,10 @@ export const cadApi = baseApi.injectEndpoints({
     }),
 
     reviseCad: builder.mutation<JobAccepted, ReviseCadArgs>({
-      query: ({ conversationId, version, modelParams }) => ({
+      query: ({ conversationId, version, modelParams, femRunId }) => ({
         url: `/conversations/${conversationId}/cad/${version}/revise`,
         method: "POST",
-        body: { model_params: modelParams },
+        body: { model_params: modelParams, ...(femRunId ? { fem_run_id: femRunId } : {}) },
       }),
       invalidatesTags: (_result, _error, args) => [
         { type: "Conversations", id: args.conversationId },

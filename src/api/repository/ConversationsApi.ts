@@ -9,7 +9,6 @@ import type {
 import type { GenerateRequest, JobAccepted } from "../../types/apiTypes/JobTypes";
 import type {
     AssistantChatRequest,
-    SendMessageAdvArgs,
     SendMessageArgs,
 } from "../../types/apiTypes/MessageTypes";
 import { baseApi } from "../baseApi";
@@ -72,20 +71,6 @@ export const conversationApi = baseApi.injectEndpoints({
             ]
         }),
 
-        sendAdvancedMessage: builder.mutation<JobAccepted, SendMessageAdvArgs>({
-            query: ({ conversationId, text, modelParams }) => ({
-                url: `/conversations/${conversationId}/messages_adv`,
-                method: "POST",
-                body: { text, model_params: modelParams },
-            }),
-            invalidatesTags: (_result, _error, args) => [
-                { type: "Conversations", id: args.conversationId },
-                { type: "Messages", id: args.conversationId },
-                { type: "Jobs", id: args.conversationId },
-                { type: "Cad", id: args.conversationId },
-            ],
-        }),
-
         chatWithAssistant: builder.mutation<
             AssistantChatOut,
             { conversationId: string } & AssistantChatRequest
@@ -127,7 +112,6 @@ export const {
     useCreateConversationMutation,
     useDeleteConversationMutation,
     useSendMessageMutation,
-    useSendAdvancedMessageMutation,
     useChatWithAssistantMutation,
     useGenerateConversationMutation
 } = conversationApi
