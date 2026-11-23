@@ -23,7 +23,6 @@ import { useGetJobByIdQuery } from "../../../api/repository/JobsApi";
 import {
   cadApi,
   useGetCadVersionsQuery,
-  useLazyGetCadModelParamsQuery,
   useLazyDownloadCadFileQuery,
 } from "../../../api/repository/CadApi";
 import CadModalList from "./components/modals/CadModalList";
@@ -40,6 +39,7 @@ import CatalogWelcome, { CatalogHints } from "./components/catalog/CatalogWelcom
 import CadResultCard from "./components/cad/CadResultCard";
 import CadJobCard from "./components/cad/CadJobCard";
 import CadReportModal from "./components/cad/CadReportModal";
+import ModelParamsViewer from "./components/cad/ModelParamsViewer";
 import { cadKey, isCadState, mergeCadVersions } from "./components/cad/cadPresentation";
 import type { CadPresentation } from "./components/cad/cadPresentation";
 
@@ -89,7 +89,7 @@ export default function Creating() {
   const [input, setInput] = useState(""); // стейт для строки ввода
   // гет и стейт загрузка cad файла
   const [downloadCadFileTrigger, { isFetching: isDownloadingCadFile }] = useLazyDownloadCadFileQuery();
-  const [getCadModelParams] = useLazyGetCadModelParamsQuery();
+  const [paramsTarget, setParamsTarget] = useState<{ conversationId: string; version: number; productId?: string } | null>(null);
   const [downloadingCadItemId, setDownloadingCadItemId] = useState<string | null>(null);
   
   // гет списка всех кадов
@@ -335,17 +335,9 @@ export default function Creating() {
     window.URL.revokeObjectURL(fileUrl);
   };
 
-  const handleDownloadCurrentModelParams = async () => {
+  const handleOpenModelParams = () => {
     if (!activeChat || !currentCad?.files.model_params) return;
-    try {
-      setDownloadingCadItemId(`current-${currentCad.id}-params`);
-      const modelParams = await getCadModelParams({ conversationId: activeChat, version: currentCad.version }).unwrap();
-      saveBlob(new Blob([JSON.stringify(modelParams, null, 2)], { type: "application/json" }), `model_v${currentCad.version}_params.json`);
-    } catch (error) {
-      console.error("Ошибка скачивания JSON-чертежа:", error);
-    } finally {
-      setDownloadingCadItemId(null);
-    }
+    setParamsTarget({ conversationId: activeChat, version: currentCad.version, productId: currentCad.params.product_id ?? 'engine_assembly' });
   };
 
   // Реальные CAD-версии диалога, возвращаемые backend.
@@ -632,13 +624,13 @@ export default function Creating() {
                       }
                       isInputDisabled={isInputBusy || !activeChat || !selection.canEnter}
                       needsAssistantPrompt={messages.length === 0}
-                      canDownloadModelParams={Boolean(currentCad?.files.model_params)}
+                      canViewModelParams={Boolean(currentCad?.files.model_params)}
                       canStartFem={fem.canStart}
                       showFem={fem.visible}
                       femDisabledReason={fem.reason}
                       isStartingFem={fem.starting}
                       onStartFem={fem.start}
-                      onDownloadModelParams={handleDownloadCurrentModelParams}
+                      onOpenModelParams={handleOpenModelParams}
                     />
                   </div>
                 </>
@@ -647,6 +639,8 @@ export default function Creating() {
           </div>
         </div>
       </div>
+
+      {paramsTarget && <ModelParamsViewer key={`${paramsTarget.conversationId}:${paramsTarget.version}`} {...paramsTarget} products={capabilities.data?.products} onClose={() => setParamsTarget(null)} />}
 
       {reportPresentation && <CadReportModal presentation={reportPresentation} products={capabilities.data?.products} onClose={() => setReportPresentation(null)} />}
 

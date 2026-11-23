@@ -1,5 +1,5 @@
 import {
-  Download,
+  FileText,
   RefreshCcw,
   SlidersHorizontal,
 } from "lucide-react";
@@ -12,13 +12,13 @@ type InputSendLineProps = {
   isAssistantDisabled: boolean;
   isInputDisabled: boolean;
   needsAssistantPrompt: boolean;
-  canDownloadModelParams: boolean;
+  canViewModelParams: boolean;
   canStartFem: boolean;
   showFem: boolean;
   femDisabledReason: string | null;
   isStartingFem: boolean;
   onStartFem: () => void;
-  onDownloadModelParams: () => void;
+  onOpenModelParams: () => void;
 };
 
 export function InputSendLine({
@@ -29,13 +29,13 @@ export function InputSendLine({
   isAssistantDisabled,
   isInputDisabled,
   needsAssistantPrompt,
-  canDownloadModelParams,
+  canViewModelParams,
   canStartFem,
   showFem,
   femDisabledReason,
   isStartingFem,
   onStartFem,
-  onDownloadModelParams,
+  onOpenModelParams,
 }: InputSendLineProps) {
   return (
     <div className="w-full shrink-0 space-y-3 border-t border-blue-400/20 bg-blue-900/20 p-4 backdrop-blur-md md:p-5">
@@ -54,12 +54,12 @@ export function InputSendLine({
 
         <button
           type="button"
-          onClick={onDownloadModelParams}
-          disabled={!canDownloadModelParams || isInputDisabled}
+          onClick={onOpenModelParams}
+          disabled={!canViewModelParams || isInputDisabled}
           className="flex items-center gap-1.5 rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-300 transition-all hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-          title="Скачать JSON-чертёж текущей CAD-версии"
+          title="Открыть параметры текущей CAD-версии"
         >
-         <Download className=" inline h-3.5 w-3.5" />
+         <FileText className=" inline h-3.5 w-3.5" />
           <span>Параметры</span>
         </button>
 
