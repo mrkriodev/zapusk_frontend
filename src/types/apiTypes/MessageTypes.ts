@@ -6,10 +6,15 @@ export interface Message {
   role: MessageRole
   content: string
   cad_state_id: string | null
+  has_model_params: boolean
   created_at: string
 }
 
 export interface SendMessageRequest {
+  text: string
+}
+
+export interface AssistantChatRequest {
   text: string
 }
 

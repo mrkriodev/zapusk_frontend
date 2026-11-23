@@ -1,12 +1,13 @@
 import { Link, useLocation } from "react-router-dom"
-import { Sparkles, User } from 'lucide-react';
+import { Database, Sparkles, User } from 'lucide-react';
 
 export default function Header(){
     const location = useLocation();
 
     const navItems = [
         { path: '/about', label: 'About', icon: Sparkles },
-        { path: '/profile', label: 'Profile', icon: User }
+        { path: '/statistics', label: 'Statistics', icon: Database },
+        { path: '/profile', label: 'Profile', icon: User },
     ]
     
     return(

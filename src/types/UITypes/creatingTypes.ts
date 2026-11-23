@@ -1,4 +1,5 @@
 import type { RefObject } from "react";
+import type { CadDownloadFormat } from "../apiTypes/CadTypes";
 
 type PartType = "case" | "holder" | "adapter" | "mount" | "decor" | "other" | ""
 
@@ -54,9 +55,22 @@ export type ChatItemProps = {
 
 export type CadModel = {
   id: string
+  conversationId: string
+  version: number
+  format: CadDownloadFormat
+  fileName: string
   name: string
-  size: string
   time: string
+}
+
+export type CadVersionModel = {
+  id: string
+  conversationId: string
+  version: number
+  createdAt: string
+  hasStl: boolean
+  hasStep: boolean
+  hasModelParams: boolean
 }
 
 // modal props
@@ -75,7 +89,10 @@ export type CreateModalProps = {
 }
 
 export type CadModalListProps = {
-  models: CadModel[]
+  models: CadVersionModel[]
+  isLoading: boolean
+  isDownloadingId: string | null
+  onDownload: (model: CadModel) => void
   onClose: () => void
   popoverRef: RefObject<HTMLDivElement | null>
 }
