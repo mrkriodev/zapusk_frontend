@@ -38,8 +38,12 @@ echo "Запускаем контейнеры в фоне..."
 export VITE_API_URL
 docker compose up -d --build
 
-echo "Перемещаем содержимое nginx html..."
-docker compose exec zapusk-frontend sh -c "mv /usr/share/nginx/html/* /tmp/"
+echo "Копируем статику из контейнера от пользователя $(id -un)..."
+# tar на хосте создаёт файлы от текущего SSH-пользователя (не root из контейнера)
+mkdir -p html
+rm -rf html/*
+docker compose exec -T zapusk-frontend \
+  tar -C /usr/share/nginx/html -cf - . | tar -C html -xf -
 
 echo "Останавливаем контейнер..."
 docker compose down --rmi all
@@ -49,14 +53,14 @@ NGINX_SITE_DIR="$(cd "$SCRIPT_DIR/../../nginx/html/${SITE_NAME}" && pwd)"
 mkdir -p "$NGINX_SITE_DIR"
 rsync -r --delete html/ "$NGINX_SITE_DIR/"
 
-# Файлы из контейнера (volume) приходят как root — возвращаем владельца
-echo "Выставляем владельца ${DEPLOY_USER}:${DEPLOY_USER}..."
+# Best-effort: не падаем, если нет прав / нет passwordless sudo (CI без TTY)
+echo "Выставляем владельца ${DEPLOY_USER}:${DEPLOY_USER} (best-effort)..."
 if chown -R "${DEPLOY_USER}:${DEPLOY_USER}" html/ "$NGINX_SITE_DIR" 2>/dev/null; then
-  :
-elif command -v sudo >/dev/null 2>&1; then
-  sudo chown -R "${DEPLOY_USER}:${DEPLOY_USER}" html/ "$NGINX_SITE_DIR"
+  echo "chown ok"
+elif command -v sudo >/dev/null 2>&1 && sudo -n chown -R "${DEPLOY_USER}:${DEPLOY_USER}" html/ "$NGINX_SITE_DIR" 2>/dev/null; then
+  echo "chown ok (sudo -n)"
 else
-  echo "Warning: could not chown html/ and ${NGINX_SITE_DIR} (need root or sudo)"
+  echo "Warning: chown skipped — files stay owned by $(id -un) (достаточно для nginx)"
 fi
 
 echo "Перезапускаем nginx..."
