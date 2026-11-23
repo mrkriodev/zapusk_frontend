@@ -1,13 +1,14 @@
 import { API_BASE_URL, baseApi } from '../baseApi';
 import { tokenStorage } from '../../store/tokenStore';
-import type { FemCancel, FemJobAccepted, FemRun, ProductCapability } from '../../types/apiTypes/FemTypes';
+import type { FemCancel, FemJobAccepted, FemRun } from '../../types/apiTypes/FemTypes';
+import type { Capabilities } from '../../types/apiTypes/CapabilityTypes';
 import type { DownloadCadFileResult } from '../../types/apiTypes/CadTypes';
 
 export const isFemPending = (status: string) => status === 'queued' || status === 'running';
 
 export const femApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getCapabilities: builder.query<{ products: ProductCapability[] }, void>({
+    getCapabilities: builder.query<Capabilities, void>({
       query: () => '/capabilities',
     }),
     getFemRuns: builder.query<{ items: FemRun[] }, string>({
@@ -34,6 +35,7 @@ export const femApi = baseApi.injectEndpoints({
             ]));
           }
         } catch {
+          return;
         }
       },
     }),

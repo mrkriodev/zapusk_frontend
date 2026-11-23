@@ -32,6 +32,7 @@ export function useConversationFem(
   currentCad: CadState | null | undefined,
   cadBusy: boolean,
   onCadJob: (jobId: string, conversationId: string) => void,
+  selectedProductId?: string | null,
 ) {
   const capabilities = useGetCapabilitiesQuery();
   const history = useGetFemRunsQuery(conversationId ?? skipToken, { refetchOnMountOrArgChange: true });
@@ -47,7 +48,7 @@ export function useConversationFem(
   const [cancellingIds, setCancellingIds] = useState<string[]>([]);
   const [revisedIds, setRevisedIds] = useState<string[]>([]);
   const [downloading, setDownloading] = useState<string | null>(null);
-  const productId = typeof currentCad?.params.product_id === 'string' ? currentCad.params.product_id : 'engine_assembly';
+  const productId = currentCad ? currentCad.params.product_id ?? 'engine_assembly' : selectedProductId;
   const product = capabilities.data?.products.find((item) => item.id === productId);
   const pending = Boolean(pendingRun);
   const busy = pending || starting.isLoading || revising.isLoading;
@@ -128,7 +129,7 @@ export function useConversationFem(
   };
 
   return {
-    runs, busy, canStart: !reason, reason, start, cancel, revise, download,
+    runs, busy, visible: Boolean(!capabilities.isError && product && product.supports_fem !== false), canStart: !reason, reason, start, cancel, revise, download,
     starting: starting.isLoading, revising: revising.isLoading, errors,
     cancellingIds, revisedIds, downloading, actionsDisabled: cadBusy || busy,
     loading: history.isLoading, historyError: history.isError, statusError: status.isError,

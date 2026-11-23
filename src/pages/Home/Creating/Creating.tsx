@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import type { CadVersionModel, Chat } from "../../../types/UITypes/creatingTypes";
 import type { Message } from "../../../types/apiTypes/MessageTypes";
-import type { CadDownloadFormat, EngineParams } from "../../../types/apiTypes/CadTypes";
+import type { CadDownloadFormat } from "../../../types/apiTypes/CadTypes";
 import ChatItem from "./components/chat/ChatItem";
 import ErrorMessage from "./components/chat/ErrorMessage";
 import LoadingMessage from "./components/chat/LoadingMessage";
@@ -12,16 +12,16 @@ import DeleteModal from "./components/modals/DeleteModal";
 import CreateModal from "./components/modals/CreateModal";
 import GenerateModal from "./components/modals/GenerateModal";
 import {
-  useChatWithAssistantMutation,
+  conversationApi,
   useCreateConversationMutation,
   useDeleteConversationMutation,
-  useGenerateConversationMutation,
   useGetConservationByIdQuery,
   useGetConversationsQuery,
 } from "../../../api/repository/ConversationsApi";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useGetJobByIdQuery } from "../../../api/repository/JobsApi";
 import {
+  cadApi,
   useGetCadVersionsQuery,
   useLazyGetCadModelParamsQuery,
   useLazyDownloadCadFileQuery,
@@ -29,10 +29,19 @@ import {
 import CadModalList from "./components/modals/CadModalList";
 import FemReports from "./components/fem/FemReports";
 import { useConversationFem } from "./hooks/useConversationFem";
+import { useConversationChat } from "./hooks/useConversationChat";
 import { JOB_POLL_TIMEOUT_MS } from "../../../constants/constants";
 import { InputSendLine } from "./components/chat/InputSendLine";
 import { baseApi } from "../../../api/baseApi";
 import type { AppDispatch } from "../../../store/store";
+import { useGetCapabilitiesQuery } from "../../../api/repository/FemApi";
+import { useProductSelection } from "./hooks/useProductSelection";
+import CatalogWelcome, { CatalogHints } from "./components/catalog/CatalogWelcome";
+import CadResultCard from "./components/cad/CadResultCard";
+import CadJobCard from "./components/cad/CadJobCard";
+import CadReportModal from "./components/cad/CadReportModal";
+import { cadKey, isCadState, mergeCadVersions } from "./components/cad/cadPresentation";
+import type { CadPresentation } from "./components/cad/cadPresentation";
 
 
 export default function Creating() {
@@ -49,9 +58,19 @@ export default function Creating() {
   const activeChat = selectedChat ?? chats[0]?.id ?? null;
   const { currentData: conversationsIdData } = useGetConservationByIdQuery(activeChat ?? skipToken);
   const messages = useMemo(() => conversationsIdData?.messages ?? [], [conversationsIdData?.messages]);
-  const { data: cadVersionsData } = useGetCadVersionsQuery(activeChat ?? skipToken);
-  const [assistantReadyConversationIds, setAssistantReadyConversationIds] = useState<Set<string>>(() => new Set());
-  const hasAssistantResponse = Boolean(activeChat && (assistantReadyConversationIds.has(activeChat) || messages.some((message) => message.role === "assistant")));
+  const { currentData: cadVersionsData } = useGetCadVersionsQuery(activeChat ?? skipToken);
+
+  const capabilities = useGetCapabilitiesQuery();
+  const selection = useProductSelection(conversationsIdData, capabilities.data?.products);
+  const [cadResults, setCadResults] = useState<Record<string, CadPresentation>>({});
+  const [reportPresentation, setReportPresentation] = useState<CadPresentation | null>(null);
+  const cadVersions = useMemo(() => mergeCadVersions(activeChat,
+    cadVersionsData?.items ?? [], [conversationsIdData?.current_cad],
+    Object.values(cadResults).map((item) => item.cad)), [activeChat, cadVersionsData?.items, conversationsIdData?.current_cad, cadResults]);
+  const currentCad = cadVersions.at(-1) ?? conversationsIdData?.current_cad;
+  const presentationFor = (cad: typeof cadVersions[number]): CadPresentation => ({
+    ...cadResults[cadKey(cad)], cad, notes: cadResults[cadKey(cad)]?.notes ?? [],
+  });
 
   // post создаем чат
   const [createConversation] = useCreateConversationMutation();
@@ -68,127 +87,27 @@ export default function Creating() {
   const modelsPopoverRef = useRef<HTMLDivElement | null>(null);
 
   const [input, setInput] = useState(""); // стейт для строки ввода
-  const [pendingRequestConversationId, setPendingRequestConversationId] =
-    useState<string | null>(null);
-  const [optimisticMessage, setOptimisticMessage] = useState<Message | null>(
-    null,
-  );
-  const [assistantDraftParams, setAssistantDraftParams] = useState<EngineParams | null>(null);
-  const [generationPromptChatId, setGenerationPromptChatId] = useState<string | null>(null);
-  const [generationError, setGenerationError] = useState<string | null>(null);
-  const generationRequestInFlight = useRef(false);
-  const generationOffer = useRef<{ conversationId: string | null; offered: boolean }>({
-    conversationId: null,
-    offered: false,
-  });
-  
-  // пост отправка сообщения assist
-  const [chatWithAssistant, { isLoading: isAssistantLoading }] = useChatWithAssistantMutation();
-  
-  const [generateConversation, { isLoading: isGeneratingRequest }] = useGenerateConversationMutation();
-  
   // гет и стейт загрузка cad файла
   const [downloadCadFileTrigger, { isFetching: isDownloadingCadFile }] = useLazyDownloadCadFileQuery();
   const [getCadModelParams] = useLazyGetCadModelParamsQuery();
   const [downloadingCadItemId, setDownloadingCadItemId] = useState<string | null>(null);
   
   // гет списка всех кадов
-  const { data: modalCadVersionsData, isLoading: isModalCadVersionsLoading } = useGetCadVersionsQuery(modelsPopoverChatId ?? skipToken);
-
-  // отправка сообщения генерации
-  const handleGenerate = async () => {
-    if (!activeChat || !hasAssistantResponse || isInputBusy || generationRequestInFlight.current || generationPromptChatId !== activeChat) return;
-
-    const text = "Сгенерируй модель";
-    generationRequestInFlight.current = true;
-    setGenerationError(null);
-
-    const conversationId = activeChat;
-    setPendingRequestConversationId(conversationId);
-    setOptimisticMessage({
-      id: `optimistic-${crypto.randomUUID()}`,
-      conversation_id: conversationId,
-      role: "user",
-      content: text,
-      cad_state_id: null,
-      has_model_params: false,
-      created_at: new Date().toISOString(),
-    });
-
-    try {
-      setJobFailure((current) =>
-        current?.conversationId === conversationId ? null : current,
-      );
-
-      const job = await generateConversation({
-        conversationId,
-        text,
-        ...(assistantDraftParams ? { params: assistantDraftParams } : {}),
-      }).unwrap();
-
-      setGenerationPromptChatId(null);
-      startJob(job.job_id, conversationId);
-    } catch (error) {
-      console.error("Ошибка запуска генерации:", error);
-      setGenerationError("Не удалось запустить генерацию. Попробуйте ещё раз.");
-      setOptimisticMessage(null);
-    } finally {
-      generationRequestInFlight.current = false;
-      setPendingRequestConversationId(null);
-    }
-  };
-
-  // отправка соообщения ассиста
-  const handleAssistantSubmit = async () => {
-    const text = input.trim();
-
-    if (!text || !activeChat || isInputBusy) return;
-
-    const conversationId = activeChat;
-    setPendingRequestConversationId(conversationId);
-    setInput("");
-    setOptimisticMessage({
-      id: `optimistic-${crypto.randomUUID()}`,
-      conversation_id: conversationId,
-      role: "user",
-      content: text,
-      cad_state_id: null,
-      has_model_params: false,
-      created_at: new Date().toISOString(),
-    });
-
-    try {
-      const response = await chatWithAssistant({
-        conversationId,
-        text,
-      }).unwrap();
-      if (generationOffer.current.conversationId === conversationId) {
-        setAssistantDraftParams(response.draft_params);
-        generationOffer.current.offered = false;
-      }
-      setAssistantReadyConversationIds((current) => {
-        const next = new Set(current);
-        next.add(conversationId);
-        return next;
-      });
-    } catch (error) {
-      console.error("Ошибка уточнения параметров:", error);
-      setOptimisticMessage(null);
-    } finally {
-      setPendingRequestConversationId(null);
-    }
-  };
+  const { currentData: modalCadVersionsData, isLoading: isModalCadVersionsLoading } = useGetCadVersionsQuery(modelsPopoverChatId ?? skipToken);
 
   // стейты для поллинга
-  const [activeJob, setActiveJob] = useState<{jobId: string; conversationId: string;} | null>(null);
+  const [activeJob, setActiveJob] = useState<{jobId: string; conversationId: string; paused?: boolean;} | null>(null);
   const [jobFailure, setJobFailure] = useState<{conversationId: string; message: string;} | null>(null);
-  const canPollJob = Boolean(activeJob);
+  const canPollJob = Boolean(activeJob && !activeJob.paused);
+  const [readingCad, setReadingCad] = useState(false);
   const startJob = useCallback((jobId: string, conversationId: string) => {
     setJobFailure((current) => current?.conversationId === conversationId ? null : current);
     setActiveJob({ jobId, conversationId });
   }, []);
-  const cadBusy = isAssistantLoading || isGeneratingRequest || Boolean(activeJob);
-  const fem = useConversationFem(activeChat, conversationsIdData?.current_cad, cadBusy, startJob);
+  const dialog = useConversationChat(activeChat, startJob);
+  const { continueAfterJob, getApprovedDraft } = dialog;
+  const cadBusy = dialog.busy || dialog.queueBusy || Boolean(activeJob);
+  const fem = useConversationFem(activeChat, currentCad, cadBusy, startJob, selection.productId);
 
 
   // хук поллинга сообщения
@@ -196,6 +115,8 @@ export default function Creating() {
     currentData: jobData,
     error: jobError,
     isError: isJobError,
+    isFetching: isJobFetching,
+    refetch: refetchJob,
   } = useGetJobByIdQuery(
     activeJob?.jobId ?? skipToken,
     {
@@ -216,17 +137,16 @@ export default function Creating() {
 
   // юзеффект таймер поллинга
   useEffect(() => {
-    if (!activeJob) return;
+    if (!activeJob || activeJob.paused) return;
 
     const timeoutId = window.setTimeout(() => {
       console.error("Превышен лимит polling job по времени");
       setJobFailure({
         conversationId: activeJob.conversationId,
         message:
-          "Генерация заняла слишком много времени. Попробуйте уточнить запрос и запустить её снова.",
+          "Наблюдение за CAD приостановлено по времени. Обновите статус той же задачи.",
       });
-      setActiveJob(null);
-      refreshCompletedConversation(activeJob.conversationId);
+      setActiveJob({ ...activeJob, paused: true });
     }, JOB_POLL_TIMEOUT_MS);
 
     return () => {
@@ -236,17 +156,16 @@ export default function Creating() {
 
   // юзеффект ошибки поллинга
   useEffect(() => {
-    if (!activeJob || !isJobError || !jobError) return;
+    if (!activeJob || activeJob.paused || !isJobError || !jobError) return;
 
     console.error("Ошибка polling job:", jobError);
     const failureTimeoutId = window.setTimeout(() => {
       setJobFailure({
         conversationId: activeJob.conversationId,
         message:
-          "Не удалось получить статус генерации. Попробуйте запустить задачу ещё раз.",
+          "Не удалось получить статус CAD. Можно повторить чтение этой задачи.",
       });
-      setActiveJob(null);
-      refreshCompletedConversation(activeJob.conversationId);
+      setActiveJob({ ...activeJob, paused: true });
     }, 0);
 
     return () => window.clearTimeout(failureTimeoutId);
@@ -254,17 +173,38 @@ export default function Creating() {
 
   // юзеффект отслеживания статуса поллинга
   useEffect(() => {
-    if (!jobData || !activeJob || jobData.id !== activeJob.jobId) return;
+    if (!jobData || !activeJob || activeJob.paused || isJobFetching || jobData.id !== activeJob.jobId) return;
 
     if (jobData.status === "done") {
       const completionTimeoutId = window.setTimeout(() => {
-        setJobFailure((current) =>
-          current?.conversationId === activeJob.conversationId ? null : current,
-        );
+        const cad = jobData.result?.cad_state;
+        if (jobData.kind === 'fem' || jobData.conversation_id !== activeJob.conversationId || !isCadState(cad, activeJob.conversationId)) {
+          setJobFailure({ conversationId: activeJob.conversationId, message: 'Задача завершена, но сервер не вернул корректный CAD-результат. Обновите ответ задачи.' });
+          setActiveJob({ ...activeJob, paused: true });
+          return;
+        }
+        setCadResults((items) => ({ ...items, [cadKey(cad)]: {
+          cad, notes: jobData.result?.notes ?? [], confirmedDraft: getApprovedDraft(activeJob.jobId),
+        } }));
+        dispatch(cadApi.util.updateQueryData('getCadVersions', cad.conversation_id, (cached) => {
+          const index = cached.items.findIndex((item) => item.version === cad.version);
+          if (index < 0) cached.items.push(cad);
+          else cached.items[index] = cad;
+          cached.current_version = Math.max(cached.current_version ?? 0, cad.version);
+        }));
+        dispatch(conversationApi.util.updateQueryData('getConservationById', cad.conversation_id, (cached) => {
+          if (!cached.current_cad || cached.current_cad.version <= cad.version) {
+            cached.current_cad = cad;
+            cached.current_version = cad.version;
+          }
+          const assistant = jobData.result?.assistant_message;
+          if (assistant && !cached.messages.some((message) => message.id === assistant.id)) cached.messages.push(assistant);
+        }));
+        setJobFailure((current) => current?.conversationId === activeJob.conversationId ? null : current);
         setActiveJob(null);
         refreshCompletedConversation(activeJob.conversationId);
+        void continueAfterJob(activeJob.conversationId, activeJob.jobId);
       }, 0);
-
       return () => window.clearTimeout(completionTimeoutId);
     }
 
@@ -278,11 +218,12 @@ export default function Creating() {
         });
         setActiveJob(null);
         refreshCompletedConversation(activeJob.conversationId);
+        void continueAfterJob(activeJob.conversationId, activeJob.jobId);
       }, 0);
 
       return () => window.clearTimeout(failureTimeoutId);
     }
-  }, [jobData, activeJob, refreshCompletedConversation]);
+  }, [jobData, activeJob, isJobFetching, refreshCompletedConversation, continueAfterJob, getApprovedDraft, dispatch]);
 
   // функция удаления чата
   const handleDeleteChat = async (chat: Chat) => {
@@ -297,6 +238,7 @@ export default function Creating() {
 
       if (activeChat === chat.id) {
         const nextChat = chats.find((item) => item.id !== chat.id);
+        dialog.hideForNavigation();
         setActiveChat(nextChat?.id ?? null);
       }
     } catch (error) {
@@ -314,6 +256,7 @@ export default function Creating() {
         title: newChatName.trim() || "Новый чат",
       }).unwrap();
 
+      dialog.hideForNavigation();
       setActiveChat(newConversation.id);
 
       setNewChatName("");
@@ -331,33 +274,11 @@ export default function Creating() {
 
   // коллбек открытия чата
   const handleSelectChat = (chatId: string) => {
+    dialog.hideForNavigation();
     setActiveChat(chatId);
     setIsSidebarOpen(false);
     setModelsPopoverChatId(null);
   };
-
-  useEffect(() => {
-    const resetId = window.setTimeout(() => setAssistantDraftParams(null), 0);
-    return () => window.clearTimeout(resetId);
-  }, [activeChat]);
-
-  useEffect(() => {
-    if (!optimisticMessage) return;
-
-    const optimisticCreatedAt = new Date(optimisticMessage.created_at).getTime();
-    const hasServerMessage = messages.some(
-      (message) =>
-        message.conversation_id === optimisticMessage.conversation_id &&
-        message.role === "user" &&
-        message.content === optimisticMessage.content &&
-        new Date(message.created_at).getTime() >= optimisticCreatedAt - 5_000,
-    );
-
-    if (hasServerMessage) {
-      const clearId = window.setTimeout(() => setOptimisticMessage(null), 0);
-      return () => window.clearTimeout(clearId);
-    }
-  }, [messages, optimisticMessage]);
 
   // 
   useEffect(() => {
@@ -383,33 +304,22 @@ export default function Creating() {
   // флаги для поллинга 
   const isWaitingForMessage = Boolean(
     activeChat &&
-      (pendingRequestConversationId === activeChat ||
-        (activeJob && activeJob.conversationId === activeChat)),
+      dialog.pendingConversationId === activeChat,
   );
   const isGeneratingModel = Boolean(activeJob);
   const isInputBusy = cadBusy || fem.busy;
 
-  // Offer once per chat visit, then again only after a successful assistant reply.
-  useEffect(() => {
-    const chatChanged = generationOffer.current.conversationId !== activeChat;
-    if (chatChanged) {
-      generationOffer.current = { conversationId: activeChat, offered: false };
+  const handleAssistantSubmit = () => {
+    if (isInputBusy || !selection.canEnter) return;
+    if (dialog.submit(input, selection.firstProductId)) {
+      selection.markSubmitted();
+      setInput("");
     }
-
-    const shouldOffer = Boolean(activeChat && hasAssistantResponse && !isInputBusy && !generationOffer.current.offered);
-    if (!chatChanged && !shouldOffer) return;
-
-    const timer = window.setTimeout(() => {
-      setGenerationError(null);
-      if (shouldOffer) {
-        generationOffer.current.offered = true;
-        setGenerationPromptChatId(activeChat);
-      } else {
-        setGenerationPromptChatId(null);
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [activeChat, hasAssistantResponse, isInputBusy]);
+  };
+  const handleGenerate = () => {
+    if (!isInputBusy) dialog.confirm();
+  };
+  const optimisticMessage = dialog.optimisticMessage;
 
   const showEmptyChatsState = !conversationsLoading && !conversationsError && !hasChats; // флаг отсутствия чатов
   const inputPlaceholder = isGeneratingModel ? "Идет генерация модели" : "Опишите нужную вам деталь";
@@ -426,7 +336,6 @@ export default function Creating() {
   };
 
   const handleDownloadCurrentModelParams = async () => {
-    const currentCad = conversationsIdData?.current_cad;
     if (!activeChat || !currentCad?.files.model_params) return;
     try {
       setDownloadingCadItemId(`current-${currentCad.id}-params`);
@@ -441,9 +350,33 @@ export default function Creating() {
 
   // Реальные CAD-версии диалога, возвращаемые backend.
   const cadModalModels = useMemo(() => {
-    const items = modalCadVersionsData?.items ?? [];
-    return items.map((item): CadVersionModel => ({ id: item.id, conversationId: item.conversation_id, version: item.version, createdAt: item.created_at, hasStl: Boolean(item.files.stl), hasStep: Boolean(item.files.step), hasModelParams: Boolean(item.files.model_params) }));
-  }, [modalCadVersionsData?.items]);
+    const items = mergeCadVersions(modelsPopoverChatId, modalCadVersionsData?.items ?? [], Object.values(cadResults).map((item) => item.cad));
+    return items.map((item): CadVersionModel => ({ cad: item, id: item.id, conversationId: item.conversation_id, version: item.version, createdAt: item.created_at, hasStl: Boolean(item.files.stl), hasStep: Boolean(item.files.step), hasModelParams: Boolean(item.files.model_params) }));
+  }, [modelsPopoverChatId, modalCadVersionsData?.items, cadResults]);
+
+  const retryCad = async () => {
+    if (!activeJob || readingCad) return;
+    const id = activeJob.jobId;
+    setReadingCad(true);
+    try {
+      await refetchJob().unwrap();
+      setJobFailure(null);
+      setActiveJob((current) => current?.jobId === id ? { ...current, paused: false } : current);
+    } catch {
+      setJobFailure({ conversationId: activeJob.conversationId, message: 'Не удалось обновить CAD-задачу. Повторите чтение, когда восстановится связь.' });
+    } finally { setReadingCad(false); }
+  };
+
+  const timeline = useMemo(() => {
+    const events: ({ key: string; time: number; order: number } & ({ type: 'message'; message: Message } | { type: 'cad'; cad: typeof cadVersions[number] }))[] = messages.map((message, index) => ({ key: `message-${message.id}`, type: 'message', message, time: new Date(message.created_at).getTime() || 0, order: index * 2 }));
+    for (const cad of cadVersions) {
+      const index = messages.findIndex((message) => message.cad_state_id === cad.id || message.id === cad.message_id);
+      events.push({ key: `cad-${cadKey(cad)}`, type: 'cad', cad,
+        time: new Date(index >= 0 ? messages[index].created_at : cad.created_at).getTime() || 0,
+        order: index >= 0 ? index * 2 + 1 : messages.length * 2 });
+    }
+    return events.sort((a, b) => a.time - b.time || a.order - b.order).reverse();
+  }, [messages, cadVersions]);
 
   // 
   const handleDownloadCadFile = async ({
@@ -641,43 +574,51 @@ export default function Creating() {
                 </div>
               ) : (
                 <>
-                  <ul className="flex flex-col-reverse flex-1 min-h-0 pt-4 px-4 pb-2 overflow-y-auto">
+                  {(messages.length > 0 || currentCad) && selection.product && <div className="shrink-0 px-4 pt-3"><CatalogHints product={selection.product} engine={capabilities.data?.products.find((item) => item.id === 'engine_assembly')} /></div>}
+                  <ul className={`flex ${messages.length === 0 && !currentCad ? "flex-col" : "flex-col-reverse"} flex-1 min-h-0 pt-4 px-4 pb-2 overflow-y-auto`}>
                     <FemReports fem={fem} conversationId={activeChat} />
                     {isWaitingForMessage && <LoadingMessage />}
+                    {activeJob?.conversationId === activeChat && <CadJobCard job={jobData} paused={Boolean(activeJob.paused)} error={jobFailure?.conversationId === activeChat ? jobFailure.message : undefined} reading={readingCad} onRetry={() => void retryCad()} />}
+                    {dialog.notice && <li role="status" className="mb-3 rounded-xl border border-blue-400/30 bg-slate-900 p-3 text-sm text-blue-200">{dialog.notice}</li>}
+                    {dialog.failures.filter(({ turn }) => turn.request.request_id !== dialog.prompt?.requestId).map(({ turn, message, retryable }) => (
+                      <li key={turn.request.request_id} role="alert" className="mb-3 max-w-3xl rounded-xl border border-red-400/30 bg-slate-900 p-3 text-sm text-red-200">
+                        <p>{message}</p>
+                        {retryable && <button type="button" disabled={isInputBusy} onClick={() => dialog.retry(turn.request.request_id)} className="mt-2 rounded-lg border border-blue-400/30 px-3 py-2 text-blue-100 disabled:opacity-40">Повторить</button>}
+                      </li>
+                    ))}
 
                     {optimisticMessage?.conversation_id === activeChat && (
                       <MessageItem message={optimisticMessage} />
                     )}
 
-                    {jobFailure?.conversationId === activeChat && (
+                    {jobFailure?.conversationId === activeChat && !activeJob && (
                       <ErrorMessage message={jobFailure.message} />
                     )}
 
-                    {messages
-                      .slice()
-                      .reverse()
-                      .map((message) => (
-                        <MessageItem
-                          key={message.id}
-                          message={message}
-                          onDownloadCadFile={handleDownloadMessageCadFile}
-                          isDownloading={
-                            isDownloadingCadFile &&
-                            downloadingCadItemId === message.id
-                          }
-                        />
-                      ))}
+                    {timeline.map((event) => event.type === 'cad' ? (
+                      <li key={event.key} className="mb-3 w-full max-w-3xl"><CadResultCard presentation={presentationFor(event.cad)} products={capabilities.data?.products} /></li>
+                    ) : (
+                      <MessageItem key={event.key} message={event.message} onDownloadCadFile={handleDownloadMessageCadFile} isDownloading={isDownloadingCadFile && downloadingCadItemId === event.message.id} />
+                    ))}
+                    {messages.length === 0 && !currentCad && <CatalogWelcome
+                      products={capabilities.data?.products} product={selection.product}
+                      canChoose={selection.canChoose && !dialog.busy} loading={capabilities.isLoading || selection.loading}
+                      error={capabilities.isError} onChoose={selection.choose} onRetry={() => void capabilities.refetch()}
+                    />}
+
                   </ul>
 
                   <div className="relative shrink-0">
-                    {generationPromptChatId === activeChat && activeChat && (!isInputBusy || isGeneratingRequest) && (
+                    {dialog.prompt && (!isInputBusy || dialog.isConfirming) && (
                       <GenerateModal
                         key={activeChat}
-                        isSubmitting={isGeneratingRequest}
-                        error={generationError}
-                        onCancel={() => {
-                          if (!generationRequestInFlight.current) setGenerationPromptChatId(null);
-                        }}
+                        isSubmitting={dialog.isConfirming}
+                        error={dialog.promptError}
+                        draft={dialog.prompt.draft}
+                        notice={dialog.prompt.notice}
+                        retryLabel={dialog.promptHasFailed && dialog.promptCanRetry}
+                        canConfirm={Boolean(dialog.prompt.draft.ready_to_generate) && (!dialog.promptHasFailed || dialog.promptCanRetry)}
+                        onCancel={dialog.dismiss}
                         onConfirm={handleGenerate}
                       />
                     )}
@@ -687,12 +628,13 @@ export default function Creating() {
                       onChange={setInput}
                       onAssistantSubmit={handleAssistantSubmit}
                       isAssistantDisabled={
-                        isInputBusy || !activeChat || !input.trim()
+                        isInputBusy || !activeChat || !selection.canEnter || !input.trim()
                       }
-                      isInputDisabled={isInputBusy || !activeChat}
-                      needsAssistantPrompt={!hasAssistantResponse}
-                      canDownloadModelParams={Boolean(conversationsIdData?.current_cad?.files.model_params)}
+                      isInputDisabled={isInputBusy || !activeChat || !selection.canEnter}
+                      needsAssistantPrompt={messages.length === 0}
+                      canDownloadModelParams={Boolean(currentCad?.files.model_params)}
                       canStartFem={fem.canStart}
+                      showFem={fem.visible}
                       femDisabledReason={fem.reason}
                       isStartingFem={fem.starting}
                       onStartFem={fem.start}
@@ -705,6 +647,8 @@ export default function Creating() {
           </div>
         </div>
       </div>
+
+      {reportPresentation && <CadReportModal presentation={reportPresentation} products={capabilities.data?.products} onClose={() => setReportPresentation(null)} />}
 
       {chatToDelete && (
         <DeleteModal
@@ -731,6 +675,7 @@ export default function Creating() {
           isLoading={isModalCadVersionsLoading}
           isDownloadingId={isDownloadingCadFile ? downloadingCadItemId : null}
           onDownload={handleDownloadCadFile}
+          onReport={(model) => { setReportPresentation(presentationFor(model.cad)); setModelsPopoverChatId(null); }}
           onClose={() => setModelsPopoverChatId(null)}
           popoverRef={modelsPopoverRef}
         />

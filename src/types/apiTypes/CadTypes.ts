@@ -91,6 +91,34 @@ export interface CadFiles {
   model_params?: string | null;
 }
 
+export interface GenerationMismatch {
+  path: string;
+  requested: JsonValue;
+  applied: JsonValue;
+  source?: string;
+}
+export interface GenerationConformance {
+  status?: string;
+  mismatches?: GenerationMismatch[];
+  warnings?: string[];
+  target_params?: JsonObject;
+  base_version?: number | null;
+  [key: string]: unknown;
+}
+export interface GenerationReport {
+  requested_params: JsonObject;
+  applied_params?: JsonObject | null;
+  actual_dimensions?: JsonObject | null;
+  actual_expansion_ratio?: number | null;
+  conformance?: GenerationConformance | null;
+  adjustments?: GenerationMismatch[];
+  applied_operations?: JsonObject[];
+  warnings?: string[];
+  advisor_note?: string | null;
+  validation?: JsonObject | null;
+  feature_plan?: JsonObject | null;
+}
+
 export interface CadState {
   id: string;
   conversation_id: string;
@@ -98,7 +126,8 @@ export interface CadState {
   version: number;
   base_version?: number | null;
   params: EngineParams;
-  physics: Physics;
+  physics?: Physics | null;
+  generation_report?: GenerationReport | null;
   files: CadFiles;
   created_at: string;
 }

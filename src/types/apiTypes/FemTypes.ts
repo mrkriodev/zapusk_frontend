@@ -63,8 +63,3 @@ export interface FemCancel {
   status: 'ok' | 'failed' | 'timed_out' | 'cancelled' | 'cancelling';
   note?: string | null;
 }
-export interface ProductCapability {
-  id: string;
-  label: string;
-  supports_fem?: boolean;
-}

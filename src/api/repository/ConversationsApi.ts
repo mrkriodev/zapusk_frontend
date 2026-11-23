@@ -1,17 +1,21 @@
 import type { PaginationParams } from "../../types/apiTypes/ApiTypes";
 import type {
-    AssistantChatOut,
     Conversation,
     ConversationDetail,
     ConversationsResponse,
     CreateConversationRequest
 } from "../../types/apiTypes/ConversationTypes";
-import type { GenerateRequest, JobAccepted } from "../../types/apiTypes/JobTypes";
+import type { JobAccepted } from "../../types/apiTypes/JobTypes";
 import type {
-    AssistantChatRequest,
     SendMessageArgs,
 } from "../../types/apiTypes/MessageTypes";
 import { baseApi } from "../baseApi";
+import type { DialogChatArgs, DialogChatOut } from "../../types/apiTypes/DialogTypes";
+import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+
+export const canRetryChat = (error: FetchBaseQueryError) =>
+    error.status === 502 || error.status === 503 || error.status === "FETCH_ERROR" || error.status === "TIMEOUT_ERROR"
+    || (error.status === "PARSING_ERROR" && (error.originalStatus === 502 || error.originalStatus === 503));
 
 export const conversationApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
@@ -71,38 +75,43 @@ export const conversationApi = baseApi.injectEndpoints({
             ]
         }),
 
-        chatWithAssistant: builder.mutation<
-            AssistantChatOut,
-            { conversationId: string } & AssistantChatRequest
-        >({
-            query: ({ conversationId, ...body }) => ({
-                url: `/conversations/${conversationId}/assistant`,
-                method: "POST",
-                body,
-            }),
-            invalidatesTags: (_result, _error, args) => [
+        chat: builder.mutation<DialogChatOut, DialogChatArgs>({
+            async queryFn({ conversationId, request, retryOnce = true }, _api, _extra, fetchWithBQ) {
+                const args = {
+                    url: `/conversations/${conversationId}/chat`,
+                    method: "POST",
+                    body: request,
+                    timeout: 60_000,
+                };
+                let result = await fetchWithBQ(args);
+                if (result.error && retryOnce && canRetryChat(result.error)) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    result = await fetchWithBQ(args);
+                }
+                if (result.error) return { error: result.error };
+                return { data: result.data as DialogChatOut };
+            },
+            async onQueryStarted({ conversationId }, { dispatch, queryFulfilled }) {
+                try {
+                    const { data } = await queryFulfilled;
+                    dispatch(conversationApi.util.updateQueryData("getConservationById", conversationId, (draft) => {
+                        const additions = [data.user_message, data.assistant_message];
+                        for (const message of additions) {
+                            const index = draft.messages.findIndex((item) => item.id === message.id);
+                            if (index < 0) draft.messages.push(message);
+                            else draft.messages[index] = message;
+                        }
+                        draft.dialog_state = { draft: data.draft, generation: data.generation };
+                    }));
+                } catch {
+                    // Preserve a failed turn for an idempotent retry by the caller.
+                }
+            },
+            invalidatesTags: (result, _error, args) => result ? [
                 { type: "Conversations", id: args.conversationId },
                 { type: "Messages", id: args.conversationId },
-                { type: "Cad", id: args.conversationId },
-            ]
+            ] : [],
         }),
-
-        generateConversation: builder.mutation<
-            JobAccepted,
-            { conversationId: string } & GenerateRequest
-        >({
-            query: ({ conversationId, ...body }) => ({
-                url: `/conversations/${conversationId}/generate`,
-                method: "POST",
-                body,
-            }),
-            invalidatesTags: (_result, _error, args) => [
-                { type: "Conversations", id: args.conversationId },
-                { type: "Messages", id: args.conversationId },
-                { type: "Jobs", id: args.conversationId },
-                { type: "Cad", id: args.conversationId },
-            ]
-        })
     })
 })
 
@@ -112,6 +121,6 @@ export const {
     useCreateConversationMutation,
     useDeleteConversationMutation,
     useSendMessageMutation,
-    useChatWithAssistantMutation,
-    useGenerateConversationMutation
+    useChatMutation,
+    useLazyGetConservationByIdQuery
 } = conversationApi

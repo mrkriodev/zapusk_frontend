@@ -14,10 +14,6 @@ export interface SendMessageRequest {
   text: string
 }
 
-export interface AssistantChatRequest {
-  text: string
-}
-
 export interface SendMessageArgs {
   conversationId: string
   text: string

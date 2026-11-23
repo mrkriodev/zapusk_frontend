@@ -1,4 +1,4 @@
-import type { CadState, EngineParams } from "./CadTypes";
+import type { CadState } from "./CadTypes";
 import type { Message } from "./MessageTypes";
 
 export type JobStatus =
@@ -16,6 +16,7 @@ export interface JobProgress {
 export interface JobResult {
   assistant_message: Message;
   cad_state: CadState;
+  notes?: string[];
 }
 
 export interface Job {
@@ -38,9 +39,4 @@ export interface JobAccepted {
   conversation_id: string;
   status: "queued";
   user_message: Message;
-}
-
-export interface GenerateRequest {
-  text?: string | null;
-  params?: EngineParams;
 }

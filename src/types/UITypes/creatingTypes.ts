@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import type { CadDownloadFormat } from "../apiTypes/CadTypes";
+import type { CadDownloadFormat, CadState } from "../apiTypes/CadTypes";
 
 type PartType = "case" | "holder" | "adapter" | "mount" | "decor" | "other" | ""
 
@@ -64,6 +64,7 @@ export type CadModel = {
 }
 
 export type CadVersionModel = {
+  cad: CadState;
   id: string
   conversationId: string
   version: number
@@ -93,6 +94,7 @@ export type CadModalListProps = {
   isLoading: boolean
   isDownloadingId: string | null
   onDownload: (model: CadModel) => void
+  onReport: (model: CadVersionModel) => void
   onClose: () => void
   popoverRef: RefObject<HTMLDivElement | null>
 }

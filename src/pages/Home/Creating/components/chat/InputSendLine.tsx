@@ -14,6 +14,7 @@ type InputSendLineProps = {
   needsAssistantPrompt: boolean;
   canDownloadModelParams: boolean;
   canStartFem: boolean;
+  showFem: boolean;
   femDisabledReason: string | null;
   isStartingFem: boolean;
   onStartFem: () => void;
@@ -30,6 +31,7 @@ export function InputSendLine({
   needsAssistantPrompt,
   canDownloadModelParams,
   canStartFem,
+  showFem,
   femDisabledReason,
   isStartingFem,
   onStartFem,
@@ -61,7 +63,7 @@ export function InputSendLine({
           <span>Параметры</span>
         </button>
 
-        <button
+        {showFem && <button
           type="button"
           onClick={onStartFem}
           disabled={!canStartFem}
@@ -70,13 +72,14 @@ export function InputSendLine({
         >
           <RefreshCcw className="h-3.5 w-3.5 shrink-0" />
           <span>{isStartingFem ? "Запуск FEM…" : "Запустить FEM"}</span>
-        </button>
+        </button>}
 
       </div>
 
       <div className="flex gap-2 md:gap-3">
         <input
           type="text"
+          maxLength={12000}
           value={value}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
