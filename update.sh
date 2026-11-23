@@ -15,7 +15,8 @@ trap 'error_handler $LINENO' ERR
 BRANCH="${BRANCH:-main}"
 SITE_NAME="${SITE_NAME:-zapusk.io}"
 VITE_API_URL="${VITE_API_URL:-https://${SITE_NAME}/api}"
-DEPLOY_USER="${DEPLOY_USER:-mrkrio}"
+# Владелец файлов: явный DEPLOY_USER, иначе кто запустил скрипт (напр. SSH_USERNAME из Actions)
+DEPLOY_USER="${DEPLOY_USER:-$(id -un)}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
