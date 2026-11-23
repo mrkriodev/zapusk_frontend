@@ -1,5 +1,5 @@
 import { Menu, Plus, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useState, useRef, useMemo } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState, useRef, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import type { CadVersionModel, Chat } from "../../../types/UITypes/creatingTypes";
 import type { Message } from "../../../types/apiTypes/MessageTypes";
@@ -85,6 +85,10 @@ export default function Creating() {
   // стейт и реф для модалки списка кадов
   const [modelsPopoverChatId, setModelsPopoverChatId] = useState<string | null>(null);
   const modelsPopoverRef = useRef<HTMLDivElement | null>(null);
+
+  const chatListRef = useRef<HTMLUListElement>(null);
+  const followMessages = useRef(true);
+  const previousChat = useRef(activeChat);
 
   const [input, setInput] = useState(""); // стейт для строки ввода
   // гет и стейт загрузка cad файла
@@ -367,8 +371,21 @@ export default function Creating() {
         time: new Date(index >= 0 ? messages[index].created_at : cad.created_at).getTime() || 0,
         order: index >= 0 ? index * 2 + 1 : messages.length * 2 });
     }
-    return events.sort((a, b) => a.time - b.time || a.order - b.order).reverse();
+    return events.sort((a, b) => a.time - b.time || a.order - b.order);
   }, [messages, cadVersions]);
+
+  useLayoutEffect(() => {
+    const list = chatListRef.current;
+    if (!list) return;
+    const switched = previousChat.current !== activeChat;
+    previousChat.current = activeChat;
+    if (switched) followMessages.current = true;
+    if (messages.length === 0 && !optimisticMessage && !currentCad) {
+      list.scrollTop = 0;
+    } else if (followMessages.current) {
+      list.scrollTop = list.scrollHeight;
+    }
+  }, [activeChat, timeline, optimisticMessage, isWaitingForMessage, messages.length, currentCad]);
 
   // 
   const handleDownloadCadFile = async ({
@@ -567,7 +584,24 @@ export default function Creating() {
               ) : (
                 <>
                   {(messages.length > 0 || currentCad) && selection.product && <div className="shrink-0 px-4 pt-3"><CatalogHints product={selection.product} engine={capabilities.data?.products.find((item) => item.id === 'engine_assembly')} /></div>}
-                  <ul className={`flex ${messages.length === 0 && !currentCad ? "flex-col" : "flex-col-reverse"} flex-1 min-h-0 pt-4 px-4 pb-2 overflow-y-auto`}>
+                  <ul ref={chatListRef} onScroll={(event) => {
+                    const list = event.currentTarget;
+                    followMessages.current = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+                  }} className="flex flex-col flex-1 min-h-0 pt-4 px-4 pb-2 overflow-y-auto">
+                    {messages.length === 0 && !currentCad && <CatalogWelcome
+                      products={capabilities.data?.products} product={selection.product}
+                      canChoose={selection.canChoose && !dialog.busy} loading={capabilities.isLoading || selection.loading}
+                      error={capabilities.isError} onChoose={selection.choose} onRetry={() => void capabilities.refetch()}
+                    />}
+                    {timeline.map((event) => event.type === 'cad' ? (
+                      <li key={event.key} className="mb-3 w-full max-w-3xl"><CadResultCard presentation={presentationFor(event.cad)} products={capabilities.data?.products} /></li>
+                    ) : (
+                      <MessageItem key={event.key} message={event.message} onDownloadCadFile={handleDownloadMessageCadFile} isDownloading={isDownloadingCadFile && downloadingCadItemId === event.message.id} />
+                    ))}
+                    {optimisticMessage?.conversation_id === activeChat && (
+                      <MessageItem message={optimisticMessage} />
+                    )}
+
                     <FemReports fem={fem} conversationId={activeChat} />
                     {isWaitingForMessage && <LoadingMessage />}
                     {activeJob?.conversationId === activeChat && <CadJobCard job={jobData} paused={Boolean(activeJob.paused)} error={jobFailure?.conversationId === activeChat ? jobFailure.message : undefined} reading={readingCad} onRetry={() => void retryCad()} />}
@@ -579,24 +613,10 @@ export default function Creating() {
                       </li>
                     ))}
 
-                    {optimisticMessage?.conversation_id === activeChat && (
-                      <MessageItem message={optimisticMessage} />
-                    )}
-
                     {jobFailure?.conversationId === activeChat && !activeJob && (
                       <ErrorMessage message={jobFailure.message} />
                     )}
 
-                    {timeline.map((event) => event.type === 'cad' ? (
-                      <li key={event.key} className="mb-3 w-full max-w-3xl"><CadResultCard presentation={presentationFor(event.cad)} products={capabilities.data?.products} /></li>
-                    ) : (
-                      <MessageItem key={event.key} message={event.message} onDownloadCadFile={handleDownloadMessageCadFile} isDownloading={isDownloadingCadFile && downloadingCadItemId === event.message.id} />
-                    ))}
-                    {messages.length === 0 && !currentCad && <CatalogWelcome
-                      products={capabilities.data?.products} product={selection.product}
-                      canChoose={selection.canChoose && !dialog.busy} loading={capabilities.isLoading || selection.loading}
-                      error={capabilities.isError} onChoose={selection.choose} onRetry={() => void capabilities.refetch()}
-                    />}
 
                   </ul>
 
