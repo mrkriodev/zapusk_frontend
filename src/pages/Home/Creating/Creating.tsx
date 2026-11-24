@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import Layout from "../../../components/Layout";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useLayoutEffect, useState, useRef, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import type { CadVersionModel, Chat } from "../../../types/UITypes/creatingTypes";
@@ -56,7 +57,11 @@ export default function Creating() {
   );
 
   // стейт для селекта чата + тянем сообщения + все кады
-  const [selectedChat, setActiveChat] = useState<string | null>(null);
+  // Переход из «Базы знаний»: открыть созданный чат и подставить вопрос
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [handoff] = useState(() => location.state as { chatId?: string; prefill?: string } | null);
+  const [selectedChat, setActiveChat] = useState<string | null>(handoff?.chatId ?? null);
   const activeChat = selectedChat ?? chats[0]?.id ?? null;
   const { currentData: conversationsIdData } = useGetConservationByIdQuery(activeChat ?? skipToken);
   const messages = useMemo(() => conversationsIdData?.messages ?? [], [conversationsIdData?.messages]);
@@ -92,7 +97,10 @@ export default function Creating() {
   const followMessages = useRef(true);
   const previousChat = useRef(activeChat);
 
-  const [input, setInput] = useState(""); // стейт для строки ввода
+  const [input, setInput] = useState(handoff?.prefill ?? ""); // стейт для строки ввода
+  useEffect(() => {
+    if (handoff) navigate(location.pathname, { replace: true, state: null });
+  }, [handoff, navigate, location.pathname]);
   // гет и стейт загрузка cad файла
   const [downloadCadFileTrigger, { isFetching: isDownloadingCadFile }] = useLazyDownloadCadFileQuery();
   const [paramsTarget, setParamsTarget] = useState<{ conversationId: string; version: number; productId?: string } | null>(null);
@@ -521,7 +529,7 @@ export default function Creating() {
             {timeline.map((event) => event.type === 'cad' ? (
               <li key={event.key} className="mb-4 w-full"><CadResultCard presentation={presentationFor(event.cad)} products={capabilities.data?.products} /></li>
             ) : (
-              <MessageItem key={event.key} message={event.message} onDownloadCadFile={handleDownloadMessageCadFile} isDownloading={isDownloadingCadFile && downloadingCadItemId === event.message.id} />
+              <MessageItem key={event.key} message={event.message} knowledge={dialog.knowledge[event.message.id]} onDownloadCadFile={handleDownloadMessageCadFile} isDownloading={isDownloadingCadFile && downloadingCadItemId === event.message.id} />
             ))}
             {optimisticMessage?.conversation_id === activeChat && (
               <MessageItem message={optimisticMessage} />

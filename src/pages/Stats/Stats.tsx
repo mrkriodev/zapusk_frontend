@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { ArrowUp, BookMarked, Brain, ChevronDown, CornerDownLeft, FolderTree, Plus, ServerOff, Sigma, Waypoints } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCreateConversationMutation } from '../../api/repository/ConversationsApi';
 import Layout from '../../components/Layout';
 
 /* Актуальные данные векторной базы (статичные, отдельного API статистики нет) */
@@ -49,10 +50,10 @@ const metrics: Metric[] = [
     },
   },
   {
-    icon: Sigma, label: 'Чанков с LaTeX', value: 284414, sub: 'фрагментов с формулами',
+    icon: Sigma, label: 'Формул', value: 284414, sub: 'фрагментов с формулами',
     info: {
       what: 'Фрагменты, в которых есть математические формулы в LaTeX.',
-      how: 'Количество чанков с LaTeX-разметкой по всем коллекциям.',
+      how: 'Количество формул по всем коллекциям.',
       read: 'Показывает, сколько расчётного материала доступно ИИ-инженеру.',
     },
   },
@@ -136,11 +137,27 @@ function GraphSkeleton() {
 
 export default function Stats() {
   const [question, setQuestion] = useState('');
-  const [asked, setAsked] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const [createConversation, { isLoading: isCreating }] = useCreateConversationMutation();
+
+  // Отдельного API поиска по базе знаний нет: вопрос уходит в новый чат Лаборатории,
+  // где /chat отвечает с источниками (knowledge_status + sources).
+  const ask = async (text: string) => {
+    const value = text.trim();
+    if (!value || isCreating) return;
+    setError('');
+    try {
+      const conversation = await createConversation({ title: value.length > 80 ? `${value.slice(0, 77)}…` : value }).unwrap();
+      navigate('/', { state: { chatId: conversation.id, prefill: value } });
+    } catch {
+      setError('Не удалось создать чат. Попробуйте ещё раз.');
+    }
+  };
 
   const handleAsk = (event: FormEvent) => {
     event.preventDefault();
-    if (question.trim()) setAsked(true);
+    void ask(question);
   };
 
   return (
@@ -165,7 +182,8 @@ export default function Stats() {
                 <button
                   key={text}
                   type="button"
-                  onClick={() => { setQuestion(text); setAsked(false); }}
+                  onClick={() => { setQuestion(text); void ask(text); }}
+                  disabled={isCreating}
                   className="flex items-center gap-2 rounded-lg bg-panel-3 px-3 py-1.5 text-left text-[13px] text-ink transition-colors hover:bg-line-strong/60 sm:text-sm"
                 >
                   <CornerDownLeft className="h-4 w-4 shrink-0" strokeWidth={1.7} />
@@ -177,19 +195,21 @@ export default function Stats() {
             <form onSubmit={handleAsk} className="mx-auto mt-6 flex max-w-[580px] items-center gap-2 rounded-full bg-white py-1.5 pl-5 pr-1.5 ring-1 ring-line focus-within:ring-accent">
               <input
                 value={question}
-                onChange={(event) => { setQuestion(event.target.value); setAsked(false); }}
+                onChange={(event) => setQuestion(event.target.value)}
                 placeholder="Спросите ИИ-инженера…"
                 aria-label="Вопрос ИИ-инженеру"
                 className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-subtle"
               />
-              <button type="submit" disabled={!question.trim()} aria-label="Спросить" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent-hover disabled:bg-line-strong">
+              <button type="submit" disabled={!question.trim() || isCreating} aria-label="Спросить" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent-hover disabled:bg-line-strong">
                 <ArrowUp className="h-[18px] w-[18px]" strokeWidth={2} />
               </button>
             </form>
-            {asked ? (
-              <NoBackend className="mx-auto mt-3 max-w-[580px] justify-center" text="Backend API для поиска по базе знаний пока нет. Задать вопрос можно в чате Лаборатории." />
+            {error ? (
+              <p role="alert" className="mt-3 text-xs text-danger">{error}</p>
             ) : (
-              <p className="mt-3 text-xs text-muted">Спрашивайте своими словами. Поиск по документам, формулам и понятиям базы знаний.</p>
+              <p className="mt-3 text-xs text-muted">
+                {isCreating ? 'Создаём чат…' : 'Вопрос откроется в новом чате Лаборатории: выберите изделие и отправьте — ответ придёт с источниками из базы знаний.'}
+              </p>
             )}
           </section>
 

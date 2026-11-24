@@ -15,8 +15,8 @@ type SidebarProps = {
 const navItems = [
   { path: "/", label: "Лаборатория", icon: Atom },
   { path: "/statistics", label: "База знаний", icon: Brain },
-  { path: "/modelplace", label: "Modelplace", icon: Store },
-  { path: "/factory", label: "Factory", icon: Factory },
+  { path: "/modelplace", label: "Маркетплейс", icon: Store },
+  { path: "/factory", label: "Производство", icon: Factory },
 ];
 
 /** Меню раздела аккаунта (по дизайну открывается из блока профиля) */

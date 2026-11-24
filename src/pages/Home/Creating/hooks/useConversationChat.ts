@@ -4,7 +4,7 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import {
   canRetryChat, useChatMutation, useGetConservationByIdQuery, useLazyGetConservationByIdQuery,
 } from '../../../../api/repository/ConversationsApi';
-import type { DialogChatRequest, DialogDraft } from '../../../../types/apiTypes/DialogTypes';
+import type { DialogChatOut, DialogChatRequest, DialogDraft, KnowledgeSource } from '../../../../types/apiTypes/DialogTypes';
 import type { Message } from '../../../../types/apiTypes/MessageTypes';
 import { createUUID } from '../../../../utils/uuid';
 
@@ -48,6 +48,8 @@ export function useConversationChat(conversationId: string | null, onCadJob: (id
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [notices, setNotices] = useState<Record<string, string>>({});
   const [waiting, setWaiting] = useState<string[]>([]);
+  // Источники из базы знаний (knowledge_status + sources из ответа /chat). В истории разговора их нет, поэтому храним в памяти.
+  const [knowledge, setKnowledge] = useState<Record<string, { status: DialogChatOut['knowledge_status']; sources: KnowledgeSource[] }>>({});
   const lock = useRef(false);
   const visit = useRef({ conversationId, token: Symbol() });
   const watchedJobs = useRef(new Set<string>());
@@ -112,6 +114,9 @@ export function useConversationChat(conversationId: string | null, onCadJob: (id
     try {
       const response = await sendChat({ conversationId: turn.conversationId, request: turn.request, retryOnce }).unwrap();
       const currentVisit = visit.current.conversationId === turn.conversationId && visit.current.token === turn.visit;
+      if (response.knowledge_status && response.knowledge_status !== 'not_requested') {
+        setKnowledge((values) => ({ ...values, [response.assistant_message.id]: { status: response.knowledge_status, sources: response.sources ?? [] } }));
+      }
       setPrompt((current) => current?.conversationId === turn.conversationId ? null : current);
       if (response.action === 'draft_updated' && response.draft.ready_to_generate && currentVisit) {
         setPrompt({ conversationId: turn.conversationId, draft: structuredClone(response.draft) });
@@ -189,6 +194,7 @@ export function useConversationChat(conversationId: string | null, onCadJob: (id
     submit, confirm, retry, continueAfterJob, getApprovedDraft,
     dismiss: () => { if (!lock.current) setPrompt(null); },
     hideForNavigation: () => setPrompt(null),
+    knowledge,
     prompt: visiblePrompt,
     promptError: promptFailure?.message ?? null,
     promptCanRetry: promptFailure?.retryable ?? false,

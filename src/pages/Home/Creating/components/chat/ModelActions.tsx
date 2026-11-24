@@ -11,13 +11,13 @@ export default function ModelActions() {
         <Factory className="h-4 w-4" strokeWidth={1.7} />
         <span className="hidden md:inline">Изготовить деталь</span>
       </Link>
-      <Link to="/modelplace" title="Опубликовать в Modelplace" className={`${base} bg-panel-2 text-ink hover:bg-panel-3`}>
+      <Link to="/modelplace" title="Опубликовать в маркетплейсе" className={`${base} bg-panel-2 text-ink hover:bg-panel-3`}>
         <Store className="h-4 w-4" strokeWidth={1.7} />
-        <span className="hidden xl:inline">Опубликовать в Modelplace</span>
+        <span className="hidden xl:inline">Опубликовать в маркетплейсе</span>
       </Link>
-      <Link to="/studio" title="Открыть в Studio" className={`${base} bg-panel-2 text-ink hover:bg-panel-3`}>
+      <Link to="/studio" title="Открыть в студии" className={`${base} bg-panel-2 text-ink hover:bg-panel-3`}>
         <Box className="h-4 w-4" strokeWidth={1.7} />
-        <span className="hidden xl:inline">Открыть в Studio</span>
+        <span className="hidden xl:inline">Открыть в студии</span>
       </Link>
     </div>
   );

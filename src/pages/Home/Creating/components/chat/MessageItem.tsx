@@ -1,16 +1,24 @@
-import { Download } from "lucide-react";
+import { BookOpen, Download } from "lucide-react";
+import type { DialogChatOut, KnowledgeSource } from "../../../../../types/apiTypes/DialogTypes";
 import type { Message } from "../../../../../types/apiTypes/MessageTypes";
 
 type MessageItemProps = {
   message: Message;
   onDownloadCadFile?: (message: Message) => void;
   isDownloading?: boolean;
+  knowledge?: { status: DialogChatOut["knowledge_status"]; sources: KnowledgeSource[] };
+};
+
+const knowledgeNotes: Partial<Record<DialogChatOut["knowledge_status"], string>> = {
+  no_evidence: "В базе знаний не нашлось подтверждения для этого ответа.",
+  unavailable: "База знаний сейчас недоступна, ответ без источников.",
 };
 
 export default function MessageItem({
     message,
     onDownloadCadFile,
     isDownloading = false,
+    knowledge,
 } : MessageItemProps){
 
     const isUser = message.role === "user"
@@ -42,6 +50,26 @@ export default function MessageItem({
                 <Download className="h-4 w-4" />
                 {isDownloading ? "Скачивание..." : "Скачать модель"}
             </button>
+        )}
+        {knowledge && knowledge.sources.length > 0 && (
+            <details className="mt-3 rounded-2xl bg-panel px-4 py-3 text-sm">
+                <summary className="flex cursor-pointer items-center gap-2 font-medium text-ink">
+                    <BookOpen className="h-4 w-4" strokeWidth={1.7} />
+                    Источники из базы знаний ({knowledge.sources.length})
+                </summary>
+                <ol className="mt-3 space-y-3">
+                    {knowledge.sources.map((source) => (
+                        <li key={`${source.citation_id}-${source.chunk_id}`} className="border-t border-line pt-3 first:border-t-0 first:pt-0">
+                            <p className="font-medium text-ink">[{source.citation_id}] {source.source}</p>
+                            <p className="text-xs text-muted">{source.chapter ? `${source.chapter} · ` : ""}стр. {source.page}</p>
+                            <p className="mt-1 whitespace-pre-wrap text-[13px] leading-snug text-ink-2">{source.excerpt}</p>
+                        </li>
+                    ))}
+                </ol>
+            </details>
+        )}
+        {knowledge && knowledgeNotes[knowledge.status] && (
+            <p className="mt-2 text-xs text-muted">{knowledgeNotes[knowledge.status]}</p>
         )}
         </div>
     </li>

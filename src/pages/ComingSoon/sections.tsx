@@ -3,7 +3,7 @@ import ComingSoon from "./ComingSoon";
 
 export const ModelplacePage = () => (
   <ComingSoon
-    title="Modelplace"
+    title="Маркетплейс"
     icon={Store}
     heading="Хорошие идеи уже обрели форму"
     subtitle="Готовые инженерные решения, созданные сообществом"
@@ -18,7 +18,7 @@ export const ModelplacePage = () => (
 
 export const FactoryPage = () => (
   <ComingSoon
-    title="Factory"
+    title="Производство"
     icon={Factory}
     heading="Следующая остановка — реальный мир"
     subtitle="Настройте производство детали: от материала до доставки"
@@ -33,9 +33,9 @@ export const FactoryPage = () => (
 
 export const StudioPage = () => (
   <ComingSoon
-    title="Studio"
+    title="Студия"
     icon={Box}
-    heading="Доработка модели в Studio"
+    heading="Доработка модели в студии"
     subtitle="Редактирование сгенерированной геометрии и подготовка к производству"
     features={[
       { title: "3D-просмотр", text: "Вращение, масштаб и сечения модели прямо в браузере." },
@@ -53,7 +53,7 @@ export const ActivityPage = () => (
     heading="История активности"
     subtitle="Ваши модели, публикации и заказы в одном месте"
     features={[
-      { title: "Показатели", text: "Число ваших моделей, публикаций в Modelplace и заказов." },
+      { title: "Показатели", text: "Число ваших моделей, публикаций в маркетплейсе и заказов." },
       { title: "Последние действия", text: "Созданные и купленные модели, добавленные источники знаний." },
     ]}
   />
