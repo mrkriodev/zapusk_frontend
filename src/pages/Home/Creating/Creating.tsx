@@ -38,6 +38,7 @@ import { useGetCapabilitiesQuery } from "../../../api/repository/FemApi";
 import { useProductSelection } from "./hooks/useProductSelection";
 import CatalogWelcome, { CatalogHints } from "./components/catalog/CatalogWelcome";
 import CadResultCard from "./components/cad/CadResultCard";
+import ModelActions from "./components/chat/ModelActions";
 import CadJobCard from "./components/cad/CadJobCard";
 import CadReportModal from "./components/cad/CadReportModal";
 import ModelParamsViewer from "./components/cad/ModelParamsViewer";
@@ -483,6 +484,7 @@ export default function Creating() {
   return (
     <Layout
       title={activeChatTitle || "Лаборатория"}
+      actions={activeChat && currentCad ? <ModelActions /> : undefined}
       onNewChat={() => setIsModalCreate(true)}
       chatsSection={chatsSection}
       mobileOpen={isSidebarOpen}

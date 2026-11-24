@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
-import { Atom, Brain, ChevronUp, PanelLeft, Plus, UserRound, X } from "lucide-react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { ArrowLeft, Atom, Box, Brain, ChevronUp, CreditCard, Factory, History, Library, PanelLeft, Plus, Settings, ShoppingCart, Store, UserRound, X } from "lucide-react";
 import logoMark from "../assets/logo-mark.png";
 
 type SidebarProps = {
@@ -15,7 +15,27 @@ type SidebarProps = {
 const navItems = [
   { path: "/", label: "Лаборатория", icon: Atom },
   { path: "/statistics", label: "База знаний", icon: Brain },
+  { path: "/modelplace", label: "Modelplace", icon: Store },
+  { path: "/factory", label: "Factory", icon: Factory },
 ];
+
+/** Меню раздела аккаунта (по дизайну открывается из блока профиля) */
+const accountSections = [
+  { title: "Создание", items: [
+    { path: "/account/activity", label: "История активности", icon: History },
+    { path: "/profile", label: "Мои модели", icon: Box },
+    { path: "/account/orders", label: "Заказы", icon: ShoppingCart },
+  ] },
+  { title: "Знания", items: [
+    { path: "/account/knowledge", label: "Личное ядро", icon: Library },
+  ] },
+  { title: "Аккаунт", items: [
+    { path: "/account/plan", label: "Тарифный план", icon: CreditCard },
+    { path: "/account/settings", label: "Настройки", icon: Settings },
+  ] },
+];
+
+const isAccountPath = (pathname: string) => pathname === "/profile" || pathname.startsWith("/account/");
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[14px] transition-colors ${
@@ -34,6 +54,8 @@ export function SectionTitle({ children, open, onToggle }: { children: ReactNode
 
 export default function Sidebar({ onNewChat, chatsSection, onCollapse, onClose, onNavigate }: SidebarProps) {
   const [chatsOpen, setChatsOpen] = useState(true);
+  const { pathname } = useLocation();
+  const accountMode = isAccountPath(pathname);
 
   return (
     <div className="flex h-full w-full flex-col bg-sidebar">
@@ -56,6 +78,26 @@ export default function Sidebar({ onNewChat, chatsSection, onCollapse, onClose, 
         </div>
       </div>
 
+      {accountMode ? (
+        <nav className="thin-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-2">
+          <Link to="/" onClick={onNavigate} className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[14px] text-ink-2 transition-colors hover:bg-panel-3">
+            <ArrowLeft className="h-[18px] w-[18px]" strokeWidth={1.6} />
+            В лабораторию
+          </Link>
+          {accountSections.map((section) => (
+            <div key={section.title} className="space-y-0.5">
+              <SectionTitle>{section.title}</SectionTitle>
+              {section.items.map(({ path, label, icon: Icon }) => (
+                <NavLink key={path} to={path} end onClick={onNavigate} className={navClass}>
+                  <Icon className="h-[18px] w-[18px]" strokeWidth={1.6} />
+                  {label}
+                </NavLink>
+              ))}
+            </div>
+          ))}
+        </nav>
+      ) : (
+      <>
       <nav className="space-y-0.5 px-2">
         <SectionTitle>Создание</SectionTitle>
         {onNewChat && (
@@ -81,8 +123,11 @@ export default function Sidebar({ onNewChat, chatsSection, onCollapse, onClose, 
         )}
       </div>
 
+      </>
+      )}
+
       <div className="px-2 pb-3 pt-2">
-        <NavLink to="/profile" onClick={onNavigate} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-2 py-2 transition-colors ${isActive ? "bg-sidebar-active" : "hover:bg-panel-3"}`}>
+        <NavLink to="/profile" onClick={onNavigate} className={`flex items-center gap-3 rounded-xl px-2 py-2 transition-colors ${accountMode ? "bg-sidebar-active" : "hover:bg-panel-3"}`}>
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white">
             <UserRound className="h-[18px] w-[18px]" strokeWidth={1.6} />
           </span>
