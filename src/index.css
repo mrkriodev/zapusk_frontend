@@ -1,14 +1,32 @@
 @import "tailwindcss";
 
+/* Дизайн-токены ZAPUSK (по макету Figma «Zapusk», светлая тема) */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-ink: #0a0a0a;          /* основной текст */
+  --color-ink-2: #3a3a3a;        /* вторичный текст */
+  --color-muted: #727272;        /* подписи */
+  --color-subtle: #a3a3a3;       /* плейсхолдеры, неактивное */
+  --color-surface: #ffffff;      /* фон рабочей области */
+  --color-sidebar: #eeeeee;      /* фон боковой панели */
+  --color-sidebar-active: #e2e2e2;
+  --color-panel: #f7f7f7;        /* карточки, пузырь пользователя */
+  --color-panel-2: #f1f1f1;      /* чипы, шапки карточек */
+  --color-panel-3: #e8e8e8;      /* hover */
+  --color-line: #e5e5e5;         /* границы */
+  --color-line-strong: #d4d4d4;
+  --color-accent: #1493ff;       /* основной синий */
+  --color-accent-hover: #0a82ea;
+  --color-accent-soft: #e6f3ff;
+  --color-success: #16a34a;
+  --color-warning: #b45309;
+  --color-danger: #dc2626;
+}
 
 @keyframes arrowDown {
-  0%, 100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(12px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(12px); }
 }
 
 .animate-arrow-down {
@@ -16,15 +34,8 @@
 }
 
 @keyframes assistantPrompt {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgb(192 132 252 / 0);
-    transform: scale(1);
-  }
-
-  50% {
-    box-shadow: 0 0 0 8px rgb(192 132 252 / 0.16);
-    transform: scale(1.03);
-  }
+  0%, 100% { box-shadow: 0 0 0 0 rgb(20 147 255 / 0); }
+  50% { box-shadow: 0 0 0 6px rgb(20 147 255 / 0.16); }
 }
 
 .animate-assistant-prompt {
@@ -35,10 +46,36 @@ html,
 body,
 #root {
   min-height: 100%;
-  background: #000000;
-  
+  background: var(--color-surface);
 }
 
 body {
   margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* Тонкий скроллбар как в макете */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d0d0d0 transparent;
+}
+.thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 999px; }
+.thin-scroll::-webkit-scrollbar-track { background: transparent; }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Затухание нижней части списка проектов в сайдбаре */
+.fade-bottom {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.35);
+}
+
+summary { list-style-position: outside; }

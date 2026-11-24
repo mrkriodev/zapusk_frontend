@@ -15,31 +15,31 @@ export default function MessageItem({
 
     const isUser = message.role === "user"
     const hasFile = Boolean(message.cad_state_id)
-    
+
     return(
-    <li 
+    <li
     key={message.id}
     className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
      >
         <div
-        className={`lg:max-w-2xl rounded-2xl lg:px-6 lg:py-4 px-4 py-2 max-w-[85%] ${
+        className={`${
             isUser
-            ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white mb-2'
-            : 'bg-blue-800/50 backdrop-blur-sm text-blue-100 border border-blue-400/30 mb-3'
+            ? 'mb-4 max-w-[85%] rounded-2xl bg-panel px-4 py-3 text-ink sm:max-w-[75%]'
+            : 'mb-4 w-full py-1 text-ink'
             }`}
         >
-        <p className="leading-relaxed lg:text-md text-sm">{message.content}</p>
+        <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{message.content}</p>
         {isUser && message.has_model_params && (
-            <p className="mt-2 text-xs text-blue-100/80">Прикреплён FEM-чертёж</p>
+            <p className="mt-1.5 text-xs text-muted">Прикреплён FEM-чертёж</p>
         )}
         {hasFile && (
             <button
                 type="button"
                 onClick={() => onDownloadCadFile?.(message)}
                 disabled={isDownloading}
-                className="mt-4 flex items-center gap-2 rounded-lg border border-green-400/30 bg-green-500/20 px-4 py-2 text-green-300 transition-all hover:bg-green-500/30 disabled:cursor-not-allowed disabled:opacity-60 w-47"
+                className="mt-3 inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
-                <Download className="w-4 h-4" />
+                <Download className="h-4 w-4" />
                 {isDownloading ? "Скачивание..." : "Скачать модель"}
             </button>
         )}

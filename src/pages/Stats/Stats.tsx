@@ -1,7 +1,8 @@
 import { FileText, FunctionSquare, Layers } from 'lucide-react';
 import { CollectionBadge } from './components/CollectionBadge';
 import { ProgressBar } from './components/ProgressBar';
-import { collectionColors, type CollectionName } from './statsConfig';
+import type { CollectionName } from './statsConfig';
+import Layout from '../../components/Layout';
 
 const TOTAL_POINTS = 528494;
 
@@ -47,105 +48,91 @@ function formatNumber(value: number) {
 
 export default function Stats() {
   return (
-    <main className="min-h-dvh bg-[linear-gradient(160deg,_#020617_0%,_#06111f_45%,_#0b1f3a_75%,_#0f2a5f_100%)] px-4 pb-10 pt-24 sm:px-6">
-      <div className="mx-auto max-w-5xl space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Сила ИИ-инженера</h1>
-          <p className="mt-1 text-sm text-blue-300/70">
-            Состояние векторной базы проиндексированных PDF-документов
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {kpis.map(({ icon: Icon, label, value, sub, color, background }) => (
-            <div key={label} className={`flex flex-col gap-2 rounded-2xl border p-4 ${background}`}>
-              <div className={`${color} flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide opacity-80`}>
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                {label}
-              </div>
-              <div className={`text-2xl font-bold sm:text-3xl ${color}`}>{value}</div>
-              <div className="text-xs leading-snug text-blue-300/50">{sub}</div>
-            </div>
-          ))}
-        </div>
-
-        <section className="overflow-hidden rounded-2xl border border-blue-400/20 bg-blue-900/15 backdrop-blur-sm">
-          <div className="flex flex-col gap-1 border-b border-blue-400/15 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-base font-semibold text-white">Распределение по коллекциям</h2>
-            <span className="text-xs text-blue-400/60">
-              5 коллекций · {formatNumber(TOTAL_POINTS)} points всего
-            </span>
+    <Layout title="База знаний">
+      <main className="thin-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-10 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <div className="pb-10 pt-6 text-center sm:pt-10">
+            <h1 className="text-[28px] font-medium leading-tight tracking-tight text-ink sm:text-[44px]">Сила ИИ-инженера</h1>
+            <p className="mt-2 text-[15px] text-muted sm:text-lg">
+              Состояние векторной базы проиндексированных PDF-документов
+            </p>
           </div>
 
-          <div className="hidden overflow-x-auto sm:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-blue-400/10">
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-blue-400/60">Collection</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wide text-blue-400/60">Points</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wide text-blue-400/60">With LaTeX</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wide text-blue-400/60">Unique PDFs</th>
-                  <th className="w-40 px-5 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {collections.map((collection, index) => {
-                  const percentage = Math.round((collection.points / TOTAL_POINTS) * 100);
-                  return (
-                    <tr
-                      key={collection.name}
-                      className={`transition-colors hover:bg-blue-800/15 ${index < collections.length - 1 ? 'border-b border-blue-400/10' : ''}`}
-                    >
-                      <td className="px-5 py-4"><CollectionBadge name={collection.name as CollectionName} /></td>
-                      <td className="px-5 py-4 text-right font-mono font-medium tabular-nums text-white">{formatNumber(collection.points)}</td>
-                      <td className="px-5 py-4 text-right font-mono tabular-nums text-emerald-300/80">{formatNumber(collection.latex)}</td>
-                      <td className="px-5 py-4 text-right font-mono tabular-nums text-blue-300/80">{formatNumber(collection.pdfs)}</td>
-                      <td className="px-5 py-4"><ProgressBar name={collection.name as CollectionName} percentage={percentage} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="divide-y divide-blue-400/10 sm:hidden">
-            {collections.map((collection) => {
-              const percentage = Math.round((collection.points / TOTAL_POINTS) * 100);
-              return (
-                <div key={collection.name} className="space-y-3 px-4 py-4">
-                  <div className="flex items-center justify-between">
-                    <CollectionBadge name={collection.name as CollectionName} />
-                    <span className="font-mono text-sm font-semibold text-white">{formatNumber(collection.points)}</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-blue-950/60">
-                    <div className={`h-full rounded-full bg-gradient-to-r ${collectionColors[collection.name as CollectionName]}`} style={{ width: `${percentage}%` }} />
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div><div className="mb-0.5 text-[10px] uppercase tracking-wide text-blue-300/50">Points</div><div className="font-mono text-xs text-white">{formatNumber(collection.points)}</div></div>
-                    <div><div className="mb-0.5 text-[10px] uppercase tracking-wide text-blue-300/50">LaTeX</div><div className="font-mono text-xs text-emerald-300/80">{formatNumber(collection.latex)}</div></div>
-                    <div><div className="mb-0.5 text-[10px] uppercase tracking-wide text-blue-300/50">PDFs</div><div className="font-mono text-xs text-blue-300/80">{formatNumber(collection.pdfs)}</div></div>
-                  </div>
+          <h2 className="mb-3 text-lg font-medium tracking-tight text-ink sm:text-xl">Показатели</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {kpis.map(({ icon: Icon, label, value, sub }) => (
+              <div key={label} className="flex flex-col rounded-2xl bg-panel p-4 ring-1 ring-line/70">
+                <div className="flex items-center gap-2 text-sm text-ink">
+                  <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.7} />
+                  {label}
                 </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* <section className="space-y-3 rounded-2xl border border-blue-400/15 bg-blue-900/10 px-5 py-4">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blue-300/70">
-            <Info className="h-3.5 w-3.5" />
-            Что означают показатели
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {notes.map(({ term, definition }) => (
-              <div key={term} className="space-y-1">
-                <div className="text-xs font-semibold text-white">{term}</div>
-                <div className="text-xs leading-relaxed text-blue-300/55">{definition}</div>
+                <div className="mt-4 text-[28px] font-medium tracking-tight text-ink">{value}</div>
+                <div className="mt-0.5 text-xs leading-snug text-muted">{sub}</div>
               </div>
             ))}
           </div>
-        </section> */}
-      </div>
-    </main>
+
+          <section className="mt-10">
+            <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <h2 className="text-lg font-medium tracking-tight text-ink sm:text-xl">Распределение по коллекциям</h2>
+              <span className="text-xs text-muted">
+                5 коллекций · {formatNumber(TOTAL_POINTS)} points всего
+              </span>
+            </div>
+
+            <div className="hidden overflow-hidden rounded-2xl ring-1 ring-line/70 sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-panel-2">
+                    <th className="px-5 py-3 text-left text-xs font-normal text-muted">Collection</th>
+                    <th className="px-5 py-3 text-right text-xs font-normal text-muted">Points</th>
+                    <th className="px-5 py-3 text-right text-xs font-normal text-muted">With LaTeX</th>
+                    <th className="px-5 py-3 text-right text-xs font-normal text-muted">Unique PDFs</th>
+                    <th className="w-48 px-5 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {collections.map((collection, index) => {
+                    const percentage = Math.round((collection.points / TOTAL_POINTS) * 100);
+                    return (
+                      <tr
+                        key={collection.name}
+                        className={`bg-panel transition-colors hover:bg-panel-2 ${index < collections.length - 1 ? 'border-b border-line' : ''}`}
+                      >
+                        <td className="px-5 py-3.5"><CollectionBadge name={collection.name as CollectionName} /></td>
+                        <td className="px-5 py-3.5 text-right font-medium tabular-nums text-ink">{formatNumber(collection.points)}</td>
+                        <td className="px-5 py-3.5 text-right tabular-nums text-ink-2">{formatNumber(collection.latex)}</td>
+                        <td className="px-5 py-3.5 text-right tabular-nums text-ink-2">{formatNumber(collection.pdfs)}</td>
+                        <td className="px-5 py-3.5"><ProgressBar name={collection.name as CollectionName} percentage={percentage} /></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="divide-y divide-line overflow-hidden rounded-2xl bg-panel ring-1 ring-line/70 sm:hidden">
+              {collections.map((collection) => {
+                const percentage = Math.round((collection.points / TOTAL_POINTS) * 100);
+                return (
+                  <div key={collection.name} className="space-y-3 px-4 py-4">
+                    <div className="flex items-center justify-between">
+                      <CollectionBadge name={collection.name as CollectionName} />
+                      <span className="text-sm font-medium tabular-nums text-ink">{formatNumber(collection.points)}</span>
+                    </div>
+                    <ProgressBar name={collection.name as CollectionName} percentage={percentage} />
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div><div className="mb-0.5 text-[11px] text-muted">Points</div><div className="text-xs font-medium tabular-nums text-ink">{formatNumber(collection.points)}</div></div>
+                      <div><div className="mb-0.5 text-[11px] text-muted">LaTeX</div><div className="text-xs font-medium tabular-nums text-ink">{formatNumber(collection.latex)}</div></div>
+                      <div><div className="mb-0.5 text-[11px] text-muted">PDFs</div><div className="text-xs font-medium tabular-nums text-ink">{formatNumber(collection.pdfs)}</div></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      </main>
+    </Layout>
   );
 }

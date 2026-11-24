@@ -3,9 +3,9 @@ import { LoaderCircle } from "lucide-react";
 export default function LoadingMessage() {
     return (
         <li className="flex justify-start">
-            <div className="mb-3 flex max-w-[85%] items-center gap-3 rounded-2xl border border-blue-400/30 bg-blue-800/50 px-4 py-3 text-blue-100 backdrop-blur-sm lg:max-w-2xl lg:px-6 lg:py-4">
-                <LoaderCircle className="h-5 w-5 animate-spin text-blue-300" />
-                <p className="text-sm leading-relaxed lg:text-md">Генерируем ответ...</p>
+            <div className="mb-4 flex items-center gap-2.5 py-1 text-[15px] text-muted">
+                <LoaderCircle className="h-[18px] w-[18px] animate-spin text-ink-2" strokeWidth={1.7} />
+                <p className="bg-[linear-gradient(90deg,#3a3a3a,#a3a3a3,#3a3a3a)] bg-[length:200%_100%] bg-clip-text text-transparent motion-safe:animate-pulse">Генерируем ответ...</p>
             </div>
         </li>
     );

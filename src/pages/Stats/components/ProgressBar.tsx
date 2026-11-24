@@ -1,15 +1,15 @@
-import { collectionColors, type CollectionName } from '../statsConfig';
+import type { CollectionName } from '../statsConfig';
 
-export function ProgressBar({ name, percentage }: { name: CollectionName; percentage: number }) {
+export function ProgressBar({ percentage }: { name: CollectionName; percentage: number }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-blue-950/60">
+    <div className="flex items-center gap-3">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
         <div
-          className={`h-full rounded-full bg-gradient-to-r ${collectionColors[name]}`}
+          className="h-full rounded-full bg-accent"
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <span className="w-8 text-right text-xs tabular-nums text-blue-400/50">{percentage}%</span>
+      <span className="w-9 text-right text-xs tabular-nums text-ink-2">{percentage}%</span>
     </div>
   );
 }

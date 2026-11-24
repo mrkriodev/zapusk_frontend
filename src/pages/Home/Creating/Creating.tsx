@@ -1,4 +1,5 @@
-import { Menu, Plus, Sparkles, X } from "lucide-react";
+import { Plus } from "lucide-react";
+import Layout from "../../../components/Layout";
 import { useCallback, useEffect, useLayoutEffect, useState, useRef, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import type { CadVersionModel, Chat } from "../../../types/UITypes/creatingTypes";
@@ -459,206 +460,122 @@ export default function Creating() {
   });
 };
 
+  const activeChatTitle = chats.find((chat) => chat.id === activeChat)?.title;
+  const centered = "px-[max(1rem,calc((100%_-_760px)/2))]";
+
+  const chatsSection = (
+    <ul className="space-y-0.5">
+      {conversationsLoading && <li className="px-2.5 py-1.5 text-[13px] text-muted">Загрузка чатов...</li>}
+      {conversationsError && <li className="px-2.5 py-1.5 text-[13px] text-danger">Ошибка загрузки чатов</li>}
+      {chats.map((item) => (
+        <ChatItem
+          key={item.id}
+          item={item}
+          activeChat={activeChat}
+          setActiveChat={handleSelectChat}
+          onDeleteClick={() => setChatToDelete(item)}
+          onModelsClick={() => setModelsPopoverChatId(item.id)}
+        />
+      ))}
+    </ul>
+  );
+
   return (
-    <div className="h-dvh pt-16 flex flex-col overflow-hidden bg-amber-300 p-2 bg-linear-to-br bg-[linear-gradient(160deg,_#020617_0%,_#06111f_45%,_#0b1f3a_75%,_#0f2a5f_100%)] ">
-      <div className=" flex flex-col flex-1 min-h-0 z-10 ">
-        <div className="text-center relative text-white items-center justify-center flex flex-row lg:mt-6 mt-2">
-          <Menu
-            onClick={() => setIsSidebarOpen(true)}
-            className="absolute left-0 w-6 h-6 lg:hidden self-start "
-          />
-
-          <div className="flex flex-col items-center">
-            <h1 className="font-bold flex lg:text-3xl items-center sm:text-lg">
-              <Sparkles className="w-4 h-4 lg:w-6 lg:h-6 text-purple-400 lg:mr-2 mr-1" />
-              Дизайн аэрокосмических деталей
-            </h1>
-
-            <p className="hidden sm:block text-blue-300 text-xs lg:text-md sm:text-sm lg:mt-2 mt-1">
-              Опишите деталь, и получите готовый STL файл
-            </p>
-          </div>
+    <Layout
+      title={activeChatTitle || "Лаборатория"}
+      onNewChat={() => setIsModalCreate(true)}
+      chatsSection={chatsSection}
+      mobileOpen={isSidebarOpen}
+      onMobileOpenChange={setIsSidebarOpen}
+    >
+      {showEmptyChatsState ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-6 pb-24 text-center">
+          <h1 className="text-3xl font-medium tracking-tight text-ink sm:text-[44px] sm:leading-[1.15]">Дизайн аэрокосмических деталей</h1>
+          <p className="mt-3 text-base text-muted sm:text-lg">Опишите деталь и получите готовый STL-файл</p>
+          <p className="mt-8 max-w-md text-sm leading-relaxed text-ink-2">У вас пока нет чатов, создайте новый и начните генерировать!</p>
+          <button type="button" onClick={() => setIsModalCreate(true)} className="mt-5 flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover">
+            <Plus className="h-4 w-4" />
+            Новый чат
+          </button>
         </div>
+      ) : (
+        <>
+          {(messages.length > 0 || currentCad) && selection.product && <div className={`shrink-0 pb-2 ${centered}`}><CatalogHints product={selection.product} engine={capabilities.data?.products.find((item) => item.id === 'engine_assembly')} /></div>}
+          <ul ref={chatListRef} onScroll={(event) => {
+            const list = event.currentTarget;
+            followMessages.current = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+          }} className={`thin-scroll flex min-h-0 flex-1 flex-col overflow-y-auto pb-4 pt-2 [&>*]:shrink-0 ${centered}`}>
+            {messages.length === 0 && !currentCad && <>
+              <li className="mb-8 mt-4 text-center sm:mt-10">
+                <h1 className="text-[28px] font-medium leading-tight tracking-tight text-ink sm:text-[44px]">Дизайн аэрокосмических деталей</h1>
+                <p className="mt-2 text-[15px] text-muted sm:text-lg">Опишите деталь и получите готовый STL-файл</p>
+              </li>
+              <CatalogWelcome
+                products={capabilities.data?.products} product={selection.product}
+                canChoose={selection.canChoose && !dialog.busy} loading={capabilities.isLoading || selection.loading}
+                error={capabilities.isError} onChoose={selection.choose} onRetry={() => void capabilities.refetch()}
+              />
+            </>}
+            {timeline.map((event) => event.type === 'cad' ? (
+              <li key={event.key} className="mb-4 w-full"><CadResultCard presentation={presentationFor(event.cad)} products={capabilities.data?.products} /></li>
+            ) : (
+              <MessageItem key={event.key} message={event.message} onDownloadCadFile={handleDownloadMessageCadFile} isDownloading={isDownloadingCadFile && downloadingCadItemId === event.message.id} />
+            ))}
+            {optimisticMessage?.conversation_id === activeChat && (
+              <MessageItem message={optimisticMessage} />
+            )}
 
-        <div className="relative flex-1 min-h-0 lg:pt-7 pt-3">
-          {isSidebarOpen && (
-            <div
-              onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+            <FemReports fem={fem} conversationId={activeChat} />
+            {isWaitingForMessage && <LoadingMessage />}
+            {activeJob?.conversationId === activeChat && <CadJobCard job={jobData} paused={Boolean(activeJob.paused)} error={jobFailure?.conversationId === activeChat ? jobFailure.message : undefined} reading={readingCad} onRetry={() => void retryCad()} />}
+            {dialog.notice && <li role="status" className="mb-4 rounded-2xl bg-panel px-4 py-3 text-sm text-ink-2">{dialog.notice}</li>}
+            {dialog.failures.filter(({ turn }) => turn.request.request_id !== dialog.prompt?.requestId).map(({ turn, message, retryable }) => (
+              <li key={turn.request.request_id} role="alert" className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <p>{message}</p>
+                {retryable && <button type="button" disabled={isInputBusy} onClick={() => dialog.retry(turn.request.request_id)} className="mt-2 rounded-full bg-white px-4 py-1.5 text-ink ring-1 ring-red-200 transition-colors hover:bg-red-100 disabled:opacity-40">Повторить</button>}
+              </li>
+            ))}
+
+            {jobFailure?.conversationId === activeChat && !activeJob && (
+              <ErrorMessage message={jobFailure.message} />
+            )}
+          </ul>
+
+          <div className={`relative shrink-0 pb-4 lg:pb-6 ${centered}`}>
+            {dialog.prompt && (!isInputBusy || dialog.isConfirming) && (
+              <GenerateModal
+                key={activeChat}
+                isSubmitting={dialog.isConfirming}
+                error={dialog.promptError}
+                draft={dialog.prompt.draft}
+                notice={dialog.prompt.notice}
+                retryLabel={dialog.promptHasFailed && dialog.promptCanRetry}
+                canConfirm={Boolean(dialog.prompt.draft.ready_to_generate) && (!dialog.promptHasFailed || dialog.promptCanRetry)}
+                onCancel={dialog.dismiss}
+                onConfirm={handleGenerate}
+              />
+            )}
+            <InputSendLine
+              value={input}
+              placeholder={inputPlaceholder}
+              onChange={setInput}
+              onAssistantSubmit={handleAssistantSubmit}
+              isAssistantDisabled={
+                isInputBusy || !activeChat || !selection.canEnter || !input.trim()
+              }
+              isInputDisabled={isInputBusy || !activeChat || !selection.canEnter}
+              needsAssistantPrompt={messages.length === 0}
+              canViewModelParams={Boolean(currentCad?.files.model_params)}
+              canStartFem={fem.canStart}
+              showFem={fem.visible}
+              femDisabledReason={fem.reason}
+              isStartingFem={fem.starting}
+              onStartFem={fem.start}
+              onOpenModelParams={handleOpenModelParams}
             />
-          )}
-
-          <aside
-            className={`
-                            fixed left-0 top-0 z-50 h-full w-72 transform border-r border-blue-400/20 
-                            bg-slate-950 p-4 transition-transform duration-300 lg:hidden pt-16
-                            ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-                        `}
-          >
-            <div className="mb-4 flex items-center justify-between pt-2">
-              <h2 className="text-white font-semibold">Чаты</h2>
-
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="rounded-lg p-2 text-white hover:bg-white/10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <button
-              onClick={() => setIsModalCreate(true)}
-              className="w-full bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 
-                        text-white py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
-            >
-              <Plus className="w-5 h-5" />
-              Новый чат
-            </button>
-
-            <ul className="flex-1 overflow-y-auto pt-4 space-y-2">
-              {conversationsLoading && (
-                <p className="text-blue-300 text-sm">Загрузка чатов...</p>
-              )}
-
-              {conversationsError && (
-                <p className="text-red-400 text-sm">Ошибка загрузки чатов</p>
-              )}
-
-              {chats.map((item) => {
-                return (
-                  <ChatItem
-                    key={item.id}
-                    item={item}
-                    activeChat={activeChat}
-                    setActiveChat={handleSelectChat}
-                    onDeleteClick={() => setChatToDelete(item)}
-                    onModelsClick={() => setModelsPopoverChatId(item.id)}
-                  />
-                );
-              })}
-            </ul>
-          </aside>
-
-          <div className="grid lg:grid-cols-[20fr_69fr] grid-cols-1  min-h-0 h-full gap-1 ">
-            <div className="hidden lg:flex flex-col border-2 border-blue-400/20 bg-blue-900/20 p-4 min-h-full rounded-2xl">
-              <button
-                onClick={() => setIsModalCreate(true)}
-                className="w-full bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 
-                            text-white py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
-              >
-                <Plus className="w-5 h-5" />
-                Новый чат
-              </button>
-
-              <ul className="flex-1 overflow-y-auto pt-4 space-y-2 ">
-                {conversationsLoading && (
-                  <p className="text-blue-300 text-sm">Загрузка чатов...</p>
-                )}
-
-                {conversationsError && (
-                  <p className="text-red-400 text-sm">Ошибка загрузки чатов</p>
-                )}
-
-                {chats.map((item) => {
-                  return (
-                    <ChatItem
-                      key={item.id}
-                      item={item}
-                      activeChat={activeChat}
-                      setActiveChat={handleSelectChat}
-                      onDeleteClick={() => setChatToDelete(item)}
-                      onModelsClick={() => setModelsPopoverChatId(item.id)}
-                    />
-                  );
-                })}
-              </ul>
-            </div>
-
-            <div className="flex flex-col h-full min-h-0 rounded-2xl border-2 bg-slate-950 border-blue-400/20 overflow-hidden">
-              {showEmptyChatsState ? (
-                <div className="flex flex-1 items-center justify-center px-6 text-center">
-                  <p className="max-w-md text-sm leading-relaxed text-blue-200 lg:text-base">
-                    У вас пока нет чатов, создайте новый и начните генерировать!
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {(messages.length > 0 || currentCad) && selection.product && <div className="shrink-0 px-4 pt-3"><CatalogHints product={selection.product} engine={capabilities.data?.products.find((item) => item.id === 'engine_assembly')} /></div>}
-                  <ul ref={chatListRef} onScroll={(event) => {
-                    const list = event.currentTarget;
-                    followMessages.current = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
-                  }} className="flex flex-col flex-1 min-h-0 pt-4 px-4 pb-2 overflow-y-auto">
-                    {messages.length === 0 && !currentCad && <CatalogWelcome
-                      products={capabilities.data?.products} product={selection.product}
-                      canChoose={selection.canChoose && !dialog.busy} loading={capabilities.isLoading || selection.loading}
-                      error={capabilities.isError} onChoose={selection.choose} onRetry={() => void capabilities.refetch()}
-                    />}
-                    {timeline.map((event) => event.type === 'cad' ? (
-                      <li key={event.key} className="mb-3 w-full max-w-3xl"><CadResultCard presentation={presentationFor(event.cad)} products={capabilities.data?.products} /></li>
-                    ) : (
-                      <MessageItem key={event.key} message={event.message} onDownloadCadFile={handleDownloadMessageCadFile} isDownloading={isDownloadingCadFile && downloadingCadItemId === event.message.id} />
-                    ))}
-                    {optimisticMessage?.conversation_id === activeChat && (
-                      <MessageItem message={optimisticMessage} />
-                    )}
-
-                    <FemReports fem={fem} conversationId={activeChat} />
-                    {isWaitingForMessage && <LoadingMessage />}
-                    {activeJob?.conversationId === activeChat && <CadJobCard job={jobData} paused={Boolean(activeJob.paused)} error={jobFailure?.conversationId === activeChat ? jobFailure.message : undefined} reading={readingCad} onRetry={() => void retryCad()} />}
-                    {dialog.notice && <li role="status" className="mb-3 rounded-xl border border-blue-400/30 bg-slate-900 p-3 text-sm text-blue-200">{dialog.notice}</li>}
-                    {dialog.failures.filter(({ turn }) => turn.request.request_id !== dialog.prompt?.requestId).map(({ turn, message, retryable }) => (
-                      <li key={turn.request.request_id} role="alert" className="mb-3 max-w-3xl rounded-xl border border-red-400/30 bg-slate-900 p-3 text-sm text-red-200">
-                        <p>{message}</p>
-                        {retryable && <button type="button" disabled={isInputBusy} onClick={() => dialog.retry(turn.request.request_id)} className="mt-2 rounded-lg border border-blue-400/30 px-3 py-2 text-blue-100 disabled:opacity-40">Повторить</button>}
-                      </li>
-                    ))}
-
-                    {jobFailure?.conversationId === activeChat && !activeJob && (
-                      <ErrorMessage message={jobFailure.message} />
-                    )}
-
-
-                  </ul>
-
-                  <div className="relative shrink-0">
-                    {dialog.prompt && (!isInputBusy || dialog.isConfirming) && (
-                      <GenerateModal
-                        key={activeChat}
-                        isSubmitting={dialog.isConfirming}
-                        error={dialog.promptError}
-                        draft={dialog.prompt.draft}
-                        notice={dialog.prompt.notice}
-                        retryLabel={dialog.promptHasFailed && dialog.promptCanRetry}
-                        canConfirm={Boolean(dialog.prompt.draft.ready_to_generate) && (!dialog.promptHasFailed || dialog.promptCanRetry)}
-                        onCancel={dialog.dismiss}
-                        onConfirm={handleGenerate}
-                      />
-                    )}
-                    <InputSendLine
-                      value={input}
-                      placeholder={inputPlaceholder}
-                      onChange={setInput}
-                      onAssistantSubmit={handleAssistantSubmit}
-                      isAssistantDisabled={
-                        isInputBusy || !activeChat || !selection.canEnter || !input.trim()
-                      }
-                      isInputDisabled={isInputBusy || !activeChat || !selection.canEnter}
-                      needsAssistantPrompt={messages.length === 0}
-                      canViewModelParams={Boolean(currentCad?.files.model_params)}
-                      canStartFem={fem.canStart}
-                      showFem={fem.visible}
-                      femDisabledReason={fem.reason}
-                      isStartingFem={fem.starting}
-                      onStartFem={fem.start}
-                      onOpenModelParams={handleOpenModelParams}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {paramsTarget && <ModelParamsViewer key={`${paramsTarget.conversationId}:${paramsTarget.version}`} {...paramsTarget} products={capabilities.data?.products} onClose={() => setParamsTarget(null)} />}
 
@@ -694,8 +611,6 @@ export default function Creating() {
           popoverRef={modelsPopoverRef}
         />
       )}
-
-
-    </div>
+    </Layout>
   );
 }

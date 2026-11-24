@@ -1,4 +1,4 @@
-import { Download, MessageSquare, X } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import type { ChatItemProps } from "../../../../../types/UITypes/creatingTypes";
 
 export default function ChatItem({ item, activeChat, setActiveChat, onDeleteClick, onModelsClick} : ChatItemProps){
@@ -8,52 +8,45 @@ export default function ChatItem({ item, activeChat, setActiveChat, onDeleteClic
     month: "2-digit",
     year: "numeric",
   })
+  const isActive = activeChat === item.id;
 
     return (
       <li
         key={item.id}
         onClick={() => setActiveChat(item.id)}
-        className={`p-4 rounded-xl cursor-pointer transition-all ${
-          activeChat === item.id
-            ? "bg-blue-600/40 border border-blue-400/50"
-            : "bg-blue-800/20 hover:bg-blue-800/30 border border-blue-400/20"
+        title={`${item.title ?? ""} · ${dateNorm}`}
+        className={`group flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-2 transition-colors ${
+          isActive ? "bg-sidebar-active text-ink" : "text-ink-2 hover:bg-panel-3"
         }`}
       >
-        <div className="group flex items-start justify-between gap-3">
-          <div className="flex">
-            <MessageSquare className="w-4 h-4 text-blue-300 mt-1 mr-2" />
-            <div className="flex-1">
-              <div className="text-white font-medium text-md mb-1">
-                {item.title}
-              </div>
-              <div className="text-blue-300 text-sm">{dateNorm}</div>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              onClick={(e) => {
-                  e.stopPropagation();
-                  onModelsClick()
-                }
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14px] leading-5">{item.title}</div>
+          <div className="text-[11px] leading-4 text-muted">{dateNorm}</div>
+        </div>
+        <div className="flex shrink-0 items-center gap-0.5 lg:hidden lg:group-hover:flex lg:group-focus-within:flex">
+          <button
+            onClick={(e) => {
+                e.stopPropagation();
+                onModelsClick()
               }
-              className="text-blue-300 hover:text-purple-300 transition-colors"
-              aria-label="Показать сгенерированные модели"
-            >
-              <Download className="w-5 h-5"/>
-            </button>
+            }
+            className="rounded-lg p-1 text-muted transition-colors hover:bg-white hover:text-accent"
+            aria-label="Показать сгенерированные модели"
+          >
+            <Download className="h-4 w-4" strokeWidth={1.7}/>
+          </button>
 
-            <button 
-              onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteClick()
-                }
+          <button
+            onClick={(e) => {
+                e.stopPropagation();
+                onDeleteClick()
               }
-              className="text-blue-300 hover:text-red-400 transition-colors"
-              aria-label="Удалить чат"
-            >
-              <X className="w-5 h-5"/>
-            </button>
-          </div>
+            }
+            className="rounded-lg p-1 text-muted transition-colors hover:bg-white hover:text-danger"
+            aria-label="Удалить чат"
+          >
+            <Trash2 className="h-4 w-4" strokeWidth={1.7}/>
+          </button>
         </div>
       </li>
     );

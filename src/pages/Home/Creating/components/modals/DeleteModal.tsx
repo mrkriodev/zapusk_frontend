@@ -1,35 +1,33 @@
-import { AlertTriangle } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import type { DeleteModalProps } from "../../../../../types/UITypes/creatingTypes";
 
 export default function DeleteModal({chat, onCancel, onConfirm}: DeleteModalProps){
     return(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/35"
             onClick={onCancel}
           />
-          <div className="relative bg-gradient-to-br from-blue-900/90 to-purple-900/90 backdrop-blur-md border border-red-400/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl shadow-red-900/30">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-500/20 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
-              </div>
-              <h2 className="text-white text-xl font-semibold">Удалить чат?</h2>
+          <div role="alertdialog" aria-labelledby="delete-chat-title" className="relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-[0_24px_64px_rgb(0_0_0/0.18)]">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-red-50">
+              <Trash2 className="h-5 w-5 text-danger" strokeWidth={1.8} />
             </div>
+            <h2 id="delete-chat-title" className="mb-2 text-xl font-medium tracking-tight text-ink">Удалить чат?</h2>
 
-            <p className="text-blue-300 mb-6 leading-relaxed">
+            <p className="mb-6 text-sm leading-relaxed text-muted">
               Чат «{chat?.title}» будет удалён безвозвратно.
             </p>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button
                 onClick={onCancel}
-                className="flex-1 bg-blue-800/40 hover:bg-blue-800/60 border border-blue-400/20 text-blue-300 py-3 rounded-xl transition-all"
+                className="flex-1 rounded-full bg-panel-2 py-3 text-sm font-medium text-ink transition-colors hover:bg-panel-3"
               >
                 Отмена
               </button>
               <button
                 onClick={onConfirm}
-                className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3 rounded-xl transition-all font-medium"
+                className="flex-1 rounded-full bg-danger py-3 text-sm font-medium text-white transition-colors hover:bg-red-700"
               >
                 Удалить
               </button>
