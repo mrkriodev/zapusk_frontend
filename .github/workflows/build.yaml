@@ -2,14 +2,14 @@ name: Build and Deploy to Server
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "test" ]
 
 env:
   DEPLOY_PATH: ${{ vars.APP_PATH_PROD }}
 
 jobs:
   deploy:
-    name: Building and deploying on server
+    name: Building and deploying staging (test.zapusk.io)
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +24,7 @@ jobs:
 
     - uses: actions/checkout@v4
 
-    - name: Deploy via SSH
+    - name: Deploy staging via SSH
       uses: appleboy/ssh-action@v1.2.0
       with:
         host: ${{ secrets.SSH_HOST }}
@@ -35,5 +35,6 @@ jobs:
           set -e
           cd ${{ vars.APP_PATH_PROD }}
           git fetch --all
-          git checkout -B main origin/main
-          BRANCH=main SITE_NAME=zapusk.io VITE_API_URL=https://zapusk.io/api ./update.sh
+          git checkout -B test origin/test
+          chmod +x ./update-test.sh ./update.sh
+          ./update-test.sh
