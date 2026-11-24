@@ -6,6 +6,7 @@ import {
 } from '../../../../api/repository/ConversationsApi';
 import type { DialogChatRequest, DialogDraft } from '../../../../types/apiTypes/DialogTypes';
 import type { Message } from '../../../../types/apiTypes/MessageTypes';
+import { createUUID } from '../../../../utils/uuid';
 
 interface Turn {
   conversationId: string;
@@ -152,7 +153,7 @@ export function useConversationChat(conversationId: string | null, onCadJob: (id
   const submit = (text: string, productId?: string) => {
     if (!conversationId || !text.trim() || text.trim().length > 12000 || lock.current) return false;
     const turn: Turn = {
-      conversationId, request: Object.freeze({ request_id: crypto.randomUUID(), text: text.trim(), ...(productId ? { product_id: productId } : {}) }),
+      conversationId, request: Object.freeze({ request_id: createUUID(), text: text.trim(), ...(productId ? { product_id: productId } : {}) }),
       confirmation: false, visit: visit.current.token, createdAt: new Date().toISOString(),
     };
     void perform(turn, true);
@@ -165,7 +166,7 @@ export function useConversationChat(conversationId: string | null, onCadJob: (id
       if (previous.retryable) void perform(previous.turn, false);
       return;
     }
-    const request = Object.freeze({ request_id: crypto.randomUUID(), text: 'Сгенерируй модель', expected_draft_revision: prompt.draft.revision });
+    const request = Object.freeze({ request_id: createUUID(), text: 'Сгенерируй модель', expected_draft_revision: prompt.draft.revision });
     confirmationSnapshots.current[request.request_id] = structuredClone(prompt.draft);
     approvedByRevision.current[`${prompt.conversationId}:${prompt.draft.revision}`] = structuredClone(prompt.draft);
     void perform({ conversationId: prompt.conversationId, request, confirmation: true, visit: visit.current.token, createdAt: new Date().toISOString() }, true);
