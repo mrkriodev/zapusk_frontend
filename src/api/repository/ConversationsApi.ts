@@ -81,7 +81,7 @@ export const conversationApi = baseApi.injectEndpoints({
                     url: `/conversations/${conversationId}/chat`,
                     method: "POST",
                     body: request,
-                    timeout: 60_000,
+                    timeout: 90_000,
                 };
                 let result = await fetchWithBQ(args);
                 if (result.error && retryOnce && canRetryChat(result.error)) {
