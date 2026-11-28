@@ -79,3 +79,25 @@ dialog::backdrop {
 }
 
 summary { list-style-position: outside; }
+
+/* «Лампочка» — сервис идей (ТЗ 12.7): загорается при отправке идеи, 1,2–1,5 с */
+@keyframes lampBulb {
+  0% { fill: transparent; }
+  35% { fill: #ffe9a3; }
+  100% { fill: #ffc83d; }
+}
+@keyframes lampGlow {
+  0% { opacity: 0; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes lampRays {
+  0%, 30% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.lamp-ignite .lamp-bulb { animation: lampBulb 1.4s ease-out both; }
+.lamp-ignite .lamp-glow { transform-origin: 24px 19px; animation: lampGlow 1.4s ease-out both; }
+.lamp-ignite .lamp-rays { animation: lampRays 1.4s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .lamp-ignite .lamp-bulb, .lamp-ignite .lamp-glow, .lamp-ignite .lamp-rays { animation: none; }
+}

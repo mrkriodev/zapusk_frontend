@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Atom, Box, Brain, ChevronUp, CreditCard, Factory, History, Library, PanelLeft, Plus, Settings, ShoppingCart, Store, UserRound, X } from "lucide-react";
+import { ArrowLeft, Atom, Box, Brain, ChevronUp, CreditCard, Factory, History, Library, Lightbulb, PanelLeft, Plus, Settings, ShoppingCart, Store, UserRound, X } from "lucide-react";
 import logoMark from "../assets/logo-mark.png";
 import { t } from "../i18n/i18n";
 
@@ -26,6 +26,7 @@ const accountSections = [
     { path: "/account/activity", label: "История активности", icon: History },
     { path: "/profile", label: "Мои объекты", icon: Box },
     { path: "/account/orders", label: "Заказы", icon: ShoppingCart },
+    { path: "/account/ideas", label: "Мои идеи", icon: Lightbulb },
   ] },
   { title: "Знания", items: [
     { path: "/account/knowledge", label: "Личное ядро", icon: Library },

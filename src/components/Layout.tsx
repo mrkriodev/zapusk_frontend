@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { PanelLeft } from "lucide-react";
 import Sidebar from "./Sidebar";
+import IdeaLamp from "./ideas/IdeaLamp";
+import IdeaPanel from "./ideas/IdeaPanel";
 import { t } from "../i18n/i18n";
 
 type LayoutProps = {
@@ -51,9 +53,11 @@ export default function Layout({ title, actions, children, onNewChat, chatsSecti
           )}
           <div className="min-w-0 flex-1 truncate text-lg font-medium tracking-tight lg:text-[22px]">{title}</div>
           {actions}
+          <IdeaLamp />
         </header>
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </div>
+      <IdeaPanel />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import Settings from "../pages/Settings/Settings";
+import MyIdeas from "../pages/Ideas/MyIdeas";
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Profile from '../pages/Profile/Profile';
 import About from '../pages/About/About';
@@ -28,6 +29,7 @@ export default function AppRouter(){
                     <Route path="/account/knowledge" element={<PersonalCorePage />} />
                     <Route path="/account/plan" element={<PlanPage />} />
                     <Route path="/account/settings" element={<Settings />} />
+                    <Route path="/account/ideas" element={<MyIdeas />} />
                 </Routes>
             </BrowserRouter>
         </>

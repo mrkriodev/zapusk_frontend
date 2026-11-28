@@ -19,7 +19,7 @@ export const baseApi = createApi({
     },
   }),
 
-  tagTypes: ["Conversations", "Messages", "Jobs", "Cad", "Fem"],
+  tagTypes: ["Conversations", "Messages", "Jobs", "Cad", "Fem", "Ideas"],
 
   endpoints: () => ({}),
 });
