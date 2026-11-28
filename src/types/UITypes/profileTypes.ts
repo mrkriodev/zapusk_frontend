@@ -1,10 +1,9 @@
-export type Model = {
-    id: number
-    name: string
-    date: string
-    size: string
-}
+import type { Conversation } from "../apiTypes/ConversationTypes";
 
 export type ModelItemProps = {
-    model: Model
+    model: Conversation
+    isDownloading: boolean
+    onOpen: (model: Conversation) => void
+    onDownload: (model: Conversation) => void
+    onDelete: (model: Conversation) => void
 }
