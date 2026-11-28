@@ -60,7 +60,7 @@ export default function Creating() {
   // Переход из «Базы знаний»: открыть созданный чат и подставить вопрос
   const location = useLocation();
   const navigate = useNavigate();
-  const [handoff] = useState(() => location.state as { chatId?: string; prefill?: string } | null);
+  const [handoff] = useState(() => location.state as { chatId?: string; prefill?: string; openCreate?: boolean } | null);
   const [selectedChat, setActiveChat] = useState<string | null>(handoff?.chatId ?? null);
   const activeChat = selectedChat ?? chats[0]?.id ?? null;
   const { currentData: conversationsIdData } = useGetConservationByIdQuery(activeChat ?? skipToken);
@@ -260,7 +260,7 @@ export default function Creating() {
     }
   };
 
-  const [isModalCreate, setIsModalCreate] = useState<boolean>(false); // стейт показа модалки создания чата 
+  const [isModalCreate, setIsModalCreate] = useState<boolean>(() => Boolean(handoff?.openCreate)); // стейт показа модалки создания чата 
   const [newChatName, setNewChatName] = useState(""); // стейт имя нового чата
 
   // коллбек создания чата

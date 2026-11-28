@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Atom, Box, Brain, ChevronUp, CreditCard, Factory, History, Library, PanelLeft, Plus, Settings, ShoppingCart, Store, UserRound, X } from "lucide-react";
 import logoMark from "../assets/logo-mark.png";
 
@@ -55,6 +55,12 @@ export function SectionTitle({ children, open, onToggle }: { children: ReactNode
 export default function Sidebar({ onNewChat, chatsSection, onCollapse, onClose, onNavigate }: SidebarProps) {
   const [chatsOpen, setChatsOpen] = useState(true);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  // Вне Лаборатории «Новый объект» переводит в Лабораторию и сразу открывает окно создания
+  const handleNewObject = onNewChat ?? (() => {
+    onNavigate?.();
+    navigate("/", { state: { openCreate: true } });
+  });
   const accountMode = isAccountPath(pathname);
 
   return (
@@ -100,12 +106,10 @@ export default function Sidebar({ onNewChat, chatsSection, onCollapse, onClose, 
       <>
       <nav className="space-y-0.5 px-2">
         <SectionTitle>Создание</SectionTitle>
-        {onNewChat && (
-          <button type="button" onClick={onNewChat} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[14px] text-ink-2 transition-colors hover:bg-panel-3">
-            <Plus className="h-[18px] w-[18px]" strokeWidth={1.6} />
-            Новый объект
-          </button>
-        )}
+        <button type="button" onClick={handleNewObject} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[14px] text-ink-2 transition-colors hover:bg-panel-3">
+          <Plus className="h-[18px] w-[18px]" strokeWidth={1.6} />
+          Новый объект
+        </button>
         {navItems.map(({ path, label, icon: Icon }) => (
           <NavLink key={path} to={path} end onClick={onNavigate} className={navClass}>
             <Icon className="h-[18px] w-[18px]" strokeWidth={1.6} />
