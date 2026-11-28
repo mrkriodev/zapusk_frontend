@@ -30,7 +30,7 @@ export default function Profile(){
           </section>
 
           <h2 className="mb-4 mt-8 text-lg font-medium tracking-tight text-ink sm:text-xl">
-            Ваши 3D модели
+            Ваши объекты
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
