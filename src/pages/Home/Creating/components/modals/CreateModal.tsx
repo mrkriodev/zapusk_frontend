@@ -12,10 +12,10 @@ export default function CreateModal({value, onChange, onCancel, onConfirm}: Crea
             <button type="button" onClick={onCancel} aria-label="Закрыть" className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-ink-2 text-white transition-colors hover:bg-ink">
               <X className="h-4 w-4" />
             </button>
-            <h2 id="create-chat-title" className="mb-5 text-xl font-medium tracking-tight text-ink">Новый чат</h2>
+            <h2 id="create-chat-title" className="mb-5 text-xl font-medium tracking-tight text-ink">Новый объект</h2>
 
             <label className="mb-2 block text-sm text-muted">
-              Название чата
+              Название объекта
             </label>
             <input
               type="text"

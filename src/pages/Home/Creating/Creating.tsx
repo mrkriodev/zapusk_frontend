@@ -267,7 +267,7 @@ export default function Creating() {
   const handleCreateChat = async () => {
     try {
       const newConversation = await createConversation({
-        title: newChatName.trim() || "Новый чат",
+        title: newChatName.trim() || "Новый объект",
       }).unwrap();
 
       dialog.hideForNavigation();
@@ -505,7 +505,7 @@ export default function Creating() {
           <p className="mt-8 max-w-md text-sm leading-relaxed text-ink-2">У вас пока нет чатов, создайте новый и начните генерировать!</p>
           <button type="button" onClick={() => setIsModalCreate(true)} className="mt-5 flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover">
             <Plus className="h-4 w-4" />
-            Новый чат
+            Новый объект
           </button>
         </div>
       ) : (

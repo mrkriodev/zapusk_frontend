@@ -103,7 +103,7 @@ export default function Sidebar({ onNewChat, chatsSection, onCollapse, onClose, 
         {onNewChat && (
           <button type="button" onClick={onNewChat} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[14px] text-ink-2 transition-colors hover:bg-panel-3">
             <Plus className="h-[18px] w-[18px]" strokeWidth={1.6} />
-            Новый чат
+            Новый объект
           </button>
         )}
         {navItems.map(({ path, label, icon: Icon }) => (
