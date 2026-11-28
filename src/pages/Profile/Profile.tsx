@@ -25,7 +25,7 @@ export default function Profile(){
             </div>
             <div className="text-right">
               <div className="text-2xl font-medium tracking-tight text-ink sm:text-[32px]">{mockModels.length}</div>
-              <div className="text-xs text-muted sm:text-sm">Созданных моделей</div>
+              <div className="text-xs text-muted sm:text-sm">Созданных объектов</div>
             </div>
           </section>
 

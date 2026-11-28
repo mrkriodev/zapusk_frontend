@@ -23,7 +23,7 @@ const navItems = [
 const accountSections = [
   { title: "Создание", items: [
     { path: "/account/activity", label: "История активности", icon: History },
-    { path: "/profile", label: "Мои модели", icon: Box },
+    { path: "/profile", label: "Мои объекты", icon: Box },
     { path: "/account/orders", label: "Заказы", icon: ShoppingCart },
   ] },
   { title: "Знания", items: [
@@ -137,7 +137,7 @@ export default function Sidebar({ onNewChat, chatsSection, onCollapse, onClose, 
           </span>
           <span className="min-w-0">
             <span className="block truncate text-[14px] font-medium text-ink">Профиль</span>
-            <span className="block truncate text-xs text-muted">Модели и аккаунт</span>
+            <span className="block truncate text-xs text-muted">Объекты и аккаунт</span>
           </span>
         </NavLink>
       </div>
