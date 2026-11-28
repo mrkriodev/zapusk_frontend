@@ -40,6 +40,7 @@ import { useProductSelection } from "./hooks/useProductSelection";
 import CatalogWelcome, { CatalogHints } from "./components/catalog/CatalogWelcome";
 import CadResultCard from "./components/cad/CadResultCard";
 import ModelActions from "./components/chat/ModelActions";
+import { useJobPercent } from "./components/cad/useJobPercent";
 import CadJobCard from "./components/cad/CadJobCard";
 import CadReportModal from "./components/cad/CadReportModal";
 import ModelParamsViewer from "./components/cad/ModelParamsViewer";
@@ -137,6 +138,13 @@ export default function Creating() {
       pollingInterval: canPollJob ? 2000 : 0,
       skipPollingIfUnfocused: true,
     },
+  );
+
+  // процент выполнения генерации: данные сервера или оценка по времени
+  const jobPercent = useJobPercent(
+    activeJob?.jobId ?? null,
+    jobData && jobData.id === activeJob?.jobId ? jobData : undefined,
+    Boolean(activeJob?.paused),
   );
 
   const refreshCompletedConversation = useCallback((conversationId: string) => {
@@ -336,7 +344,7 @@ export default function Creating() {
   const optimisticMessage = dialog.optimisticMessage;
 
   const showEmptyChatsState = !conversationsLoading && !conversationsError && !hasChats; // флаг отсутствия чатов
-  const inputPlaceholder = isGeneratingModel ? "Идет генерация модели" : "Опишите нужную вам деталь";
+  const inputPlaceholder = isGeneratingModel ? `Идет генерация модели${jobPercent && !activeJob?.paused ? ` · ${jobPercent.estimated && jobPercent.value > 0 ? "≈" : ""}${jobPercent.value}%` : ""}` : "Опишите нужную вам деталь";
 
   const saveBlob = (blob: Blob, fileName: string) => {
     const fileUrl = window.URL.createObjectURL(blob);
@@ -537,7 +545,7 @@ export default function Creating() {
 
             <FemReports fem={fem} conversationId={activeChat} />
             {isWaitingForMessage && <LoadingMessage />}
-            {activeJob?.conversationId === activeChat && <CadJobCard job={jobData} paused={Boolean(activeJob.paused)} error={jobFailure?.conversationId === activeChat ? jobFailure.message : undefined} reading={readingCad} onRetry={() => void retryCad()} />}
+            {activeJob?.conversationId === activeChat && <CadJobCard job={jobData} percent={jobPercent} paused={Boolean(activeJob.paused)} error={jobFailure?.conversationId === activeChat ? jobFailure.message : undefined} reading={readingCad} onRetry={() => void retryCad()} />}
             {dialog.notice && <li role="status" className="mb-4 rounded-2xl bg-panel px-4 py-3 text-sm text-ink-2">{dialog.notice}</li>}
             {dialog.failures.filter(({ turn }) => turn.request.request_id !== dialog.prompt?.requestId).map(({ turn, message, retryable }) => (
               <li key={turn.request.request_id} role="alert" className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
