@@ -1,10 +1,11 @@
+import Settings from "../pages/Settings/Settings";
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Profile from '../pages/Profile/Profile';
 import About from '../pages/About/About';
 import Creating from '../pages/Home/Creating/Creating';
 import Stats from '../pages/Stats/Stats';
 import {
-    ActivityPage, FactoryPage, ModelplacePage, OrdersPage, PersonalCorePage, PlanPage, SettingsPage, StudioPage,
+    ActivityPage, FactoryPage, ModelplacePage, OrdersPage, PersonalCorePage, PlanPage, StudioPage,
 } from '../pages/ComingSoon/sections';
 
 
@@ -26,7 +27,7 @@ export default function AppRouter(){
                     <Route path="/account/orders" element={<OrdersPage />} />
                     <Route path="/account/knowledge" element={<PersonalCorePage />} />
                     <Route path="/account/plan" element={<PlanPage />} />
-                    <Route path="/account/settings" element={<SettingsPage />} />
+                    <Route path="/account/settings" element={<Settings />} />
                 </Routes>
             </BrowserRouter>
         </>

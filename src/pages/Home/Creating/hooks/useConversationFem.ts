@@ -7,6 +7,7 @@ import {
 import { useReviseCadMutation } from '../../../../api/repository/CadApi';
 import type { CadState } from '../../../../types/apiTypes/CadTypes';
 import type { FemJobAccepted, FemRun } from '../../../../types/apiTypes/FemTypes';
+import { t } from "../../../../i18n/i18n";
 
 function apiError(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;
@@ -52,14 +53,14 @@ export function useConversationFem(
   const product = capabilities.data?.products.find((item) => item.id === productId);
   const pending = Boolean(pendingRun);
   const busy = pending || starting.isLoading || revising.isLoading;
-  const reason = !currentCad ? 'Сначала создайте CAD-модель'
-    : !currentCad.files.step || !currentCad.files.model_params ? 'Для FEM нужны сохранённые STEP и параметры модели'
-    : capabilities.isError ? 'Не удалось проверить поддержку FEM'
-    : !capabilities.data ? 'Проверяем поддержку FEM'
-    : !product || product.supports_fem === false ? 'FEM для этого изделия недоступен'
-    : history.isError ? 'Сначала обновите историю FEM'
-    : !history.currentData || history.isFetching ? 'Обновляем историю FEM'
-    : cadBusy || busy ? 'Дождитесь завершения текущей операции'
+  const reason = !currentCad ? t('Сначала создайте CAD-модель')
+    : !currentCad.files.step || !currentCad.files.model_params ? t('Для FEM нужны сохранённые STEP и параметры модели')
+    : capabilities.isError ? t('Не удалось проверить поддержку FEM')
+    : !capabilities.data ? t('Проверяем поддержку FEM')
+    : !product || product.supports_fem === false ? t('FEM для этого изделия недоступен')
+    : history.isError ? t('Сначала обновите историю FEM')
+    : !history.currentData || history.isFetching ? t('Обновляем историю FEM')
+    : cadBusy || busy ? t('Дождитесь завершения текущей операции')
     : null;
 
   const setError = (key: string, message: string) => setErrors((previous) => ({ ...previous, [key]: message }));
@@ -74,7 +75,7 @@ export function useConversationFem(
       const result = await startFem({ conversationId: id, version: currentCad.version }).unwrap();
       acceptedJobs.current[id] = result;
     } catch (error) {
-      setError(id, apiError(error, 'Не удалось подтвердить запуск FEM. Обновите историю, чтобы проверить, был ли расчёт принят.'));
+      setError(id, apiError(error, t('Не удалось подтвердить запуск FEM. Обновите историю, чтобы проверить, был ли расчёт принят.')));
     } finally { requestLock.current = false; }
   };
 
@@ -88,7 +89,7 @@ export function useConversationFem(
       // Keep polling: acceptance of cancellation is not a terminal run state.
     } catch (error) {
       setCancellingIds((ids) => ids.filter((id) => id !== run.id));
-      setError(run.id, apiError(error, 'Не удалось запросить отмену. Расчёт продолжает отслеживаться.'));
+      setError(run.id, apiError(error, t('Не удалось запросить отмену. Расчёт продолжает отслеживаться.')));
     }
   };
 
@@ -104,7 +105,7 @@ export function useConversationFem(
       setRevisedIds((ids) => [...ids, run.id]);
       onCadJob(job.job_id, run.conversation_id);
     } catch (error) {
-      setError(run.id, apiError(error, 'Не удалось подтвердить пересборку. Повтор использует тот же FEM-прогон.'));
+      setError(run.id, apiError(error, t('Не удалось подтвердить пересборку. Повтор использует тот же FEM-прогон.')));
     } finally { requestLock.current = false; }
   };
 
@@ -124,7 +125,7 @@ export function useConversationFem(
       link.remove();
       URL.revokeObjectURL(url);
     } catch (error) {
-      setError(run.id, apiError(error, 'Не удалось скачать файл расчёта.'));
+      setError(run.id, apiError(error, t('Не удалось скачать файл расчёта.')));
     } finally { setDownloading(null); }
   };
 

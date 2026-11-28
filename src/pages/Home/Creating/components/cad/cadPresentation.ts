@@ -1,5 +1,6 @@
 import type { CadState, JsonValue } from '../../../../../types/apiTypes/CadTypes';
 import type { DialogDraft } from '../../../../../types/apiTypes/DialogTypes';
+import { getLang, getLocale, t } from '../../../../../i18n/i18n';
 
 export interface CadPresentation {
   cad: CadState;
@@ -31,11 +32,21 @@ export function readPath(value: unknown, path: string): unknown {
 export function engineValue(value: unknown, key: string): unknown {
   return readPath(value, key) ?? readPath(value, `engine_conditions.${key}`);
 }
+/** «N элементов» с учётом склонений: ru — три формы, en — one/other, zh — без форм. */
+function itemsCount(n: number): string {
+  let key = '{n} элементов';
+  if (getLang() === 'ru') {
+    const mod10 = n % 10, mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) key = '{n} элемент';
+    else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) key = '{n} элемента';
+  } else if (n === 1) key = '{n} элемент';
+  return t(key, { n });
+}
 export function scalar(value: unknown): string {
   if (value == null) return '—';
-  if (typeof value === 'boolean') return value ? 'Да' : 'Нет';
-  if (typeof value === 'number') return value.toLocaleString('ru-RU', { maximumFractionDigits: 20 });
-  if (typeof value === 'object') return Array.isArray(value) ? `${value.length} элементов` : 'Объект';
+  if (typeof value === 'boolean') return value ? t('Да') : t('Нет');
+  if (typeof value === 'number') return value.toLocaleString(getLocale(), { maximumFractionDigits: 20 });
+  if (typeof value === 'object') return Array.isArray(value) ? itemsCount(value.length) : t('Объект');
   return String(value);
 }
 export function materialComparison({ cad, confirmedDraft }: CadPresentation) {

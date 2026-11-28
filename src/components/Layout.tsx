@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { PanelLeft } from "lucide-react";
 import Sidebar from "./Sidebar";
+import { t } from "../i18n/i18n";
 
 type LayoutProps = {
   title?: ReactNode;
@@ -40,11 +41,11 @@ export default function Layout({ title, actions, children, onNewChat, chatsSecti
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 shrink-0 items-center gap-3 px-4 lg:px-6">
-          <button type="button" onClick={() => setMobileOpen(true)} aria-label="Открыть панель" className="rounded-lg p-1.5 text-ink-2 hover:bg-panel-2 lg:hidden">
+          <button type="button" onClick={() => setMobileOpen(true)} aria-label={t("Открыть панель")} className="rounded-lg p-1.5 text-ink-2 hover:bg-panel-2 lg:hidden">
             <PanelLeft className="h-5 w-5" strokeWidth={1.6} />
           </button>
           {collapsed && (
-            <button type="button" onClick={() => setCollapsed(false)} aria-label="Развернуть панель" className="hidden rounded-lg p-1.5 text-ink-2 hover:bg-panel-2 lg:block">
+            <button type="button" onClick={() => setCollapsed(false)} aria-label={t("Развернуть панель")} className="hidden rounded-lg p-1.5 text-ink-2 hover:bg-panel-2 lg:block">
               <PanelLeft className="h-5 w-5" strokeWidth={1.6} />
             </button>
           )}

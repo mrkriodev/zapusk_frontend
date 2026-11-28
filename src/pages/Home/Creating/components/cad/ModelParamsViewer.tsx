@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { cadApi } from '../../../../../api/repository/CadApi';
 import type { ProductCapability } from '../../../../../types/apiTypes/CapabilityTypes';
 import { scalar } from './cadPresentation';
+import { t } from '../../../../../i18n/i18n';
 
 interface Props {
   conversationId: string;
@@ -34,9 +35,9 @@ function Value({ value, source = false }: { value: unknown; source?: boolean }) 
   const [expanded, setExpanded] = useState(false);
   if (value && typeof value === 'object') return <details onToggle={(event) => { if (event.target === event.currentTarget) setExpanded(event.currentTarget.open); }}>
     <summary className="cursor-pointer text-muted">{scalar(value)}</summary>
-    {expanded && <dl className="mt-2 space-y-2 border-l border-line pl-3">{Object.entries(value).map(([key, item]) => <div key={key} className="min-w-0"><dt className="break-all text-xs text-muted">{labels[key] ?? key}</dt><dd className="min-w-0 break-words"><Value value={item} source={source} /></dd></div>)}</dl>}
+    {expanded && <dl className="mt-2 space-y-2 border-l border-line pl-3">{Object.entries(value).map(([key, item]) => <div key={key} className="min-w-0"><dt className="break-all text-xs text-muted">{labels[key] ? t(labels[key]) : key}</dt><dd className="min-w-0 break-words"><Value value={item} source={source} /></dd></div>)}</dl>}
   </details>;
-  return <>{source && typeof value === 'string' ? sources[value] ?? value : scalar(value)}</>;
+  return <>{source && typeof value === 'string' ? (sources[value] ? t(sources[value]) : value) : scalar(value)}</>;
 }
 
 export default function ModelParamsViewer({ conversationId, version, productId, products, onClose }: Props) {
@@ -54,23 +55,23 @@ export default function ModelParamsViewer({ conversationId, version, productId, 
   const modelProduct = typeof meta?.component === 'string' ? meta.component : productId;
   const fields = products?.find((product) => product.id === modelProduct)?.fields ?? [];
   const dimensionUnit = typeof meta?.units === 'string' ? meta.units : undefined;
-  const title = `Параметры модели · v${version}`;
+  const title = t('Параметры модели · v{version}', { version });
   const renderTable = (value: unknown, group: string) => <dl className="mt-3 space-y-2 text-sm">{value && typeof value === 'object' ? Object.entries(value).map(([key, item]) => {
     const field = fields.find((field) => field.key === key || field.key === `${group}.${key}`);
     let unit = field?.unit;
     if ((group === 'component_params' || group === 'explicit_component_params') && typeof item === 'number' && /diameter|height|length|thickness|radius|width|depth|size|pitch/.test(key) && dimensionUnit && (!unit || ['mm', 'мм', 'm', 'м', 'cm', 'см'].includes(unit))) unit = dimensionUnit;
-    return <div key={key} className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 border-b border-line pb-2"><dt className="break-words text-muted">{field?.label ?? labels[key] ?? key}{unit ? ` (${unit})` : ''}</dt><dd className="min-w-0 break-words"><Value value={item} source={group === 'parameter_source'} /></dd></div>;
+    return <div key={key} className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 border-b border-line pb-2"><dt className="break-words text-muted">{field?.label ?? (labels[key] ? t(labels[key]) : key)}{unit ? ` (${unit})` : ''}</dt><dd className="min-w-0 break-words"><Value value={item} source={group === 'parameter_source'} /></dd></div>;
   }) : <Value value={value} />}</dl>;
   const extra = valid ? Object.fromEntries(Object.entries(data).filter(([key]) => !groups.some(([group]) => group === key))) : {};
   return <dialog ref={dialog} aria-labelledby="model-params-title" aria-busy={query.isFetching} onCancel={(event) => { event.preventDefault(); onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} className="m-auto w-[calc(100%_-_24px)] max-w-3xl overflow-visible border-0 bg-transparent p-0 text-ink backdrop:bg-black/35">
     <div className="max-h-[85dvh] overflow-y-auto thin-scroll rounded-3xl bg-white p-6 shadow-[0_24px_64px_rgb(0_0_0/0.18)]">
-      <div className="flex items-start justify-between gap-3"><h2 id="model-params-title" className="text-lg font-medium tracking-tight text-ink">{title}</h2><button type="button" autoFocus onClick={onClose} aria-label="Закрыть параметры модели" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-2 text-white hover:bg-ink focus-visible:outline-2 focus-visible:outline-accent"><X className="h-4 w-4" /></button></div>
-      {query.isFetching && <p role="status" className="mt-4 text-sm text-muted">Загружаем параметры…</p>}
-      {!query.isFetching && (query.isError || !valid) && <div role="alert" className="mt-4 text-sm text-danger"><p>Не удалось загрузить параметры модели.</p><button type="button" onClick={() => void query.refetch()} className="mt-3 rounded-full bg-white border border-line px-4 py-2 text-ink">Повторить</button></div>}
+      <div className="flex items-start justify-between gap-3"><h2 id="model-params-title" className="text-lg font-medium tracking-tight text-ink">{title}</h2><button type="button" autoFocus onClick={onClose} aria-label={t('Закрыть параметры модели')} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-2 text-white hover:bg-ink focus-visible:outline-2 focus-visible:outline-accent"><X className="h-4 w-4" /></button></div>
+      {query.isFetching && <p role="status" className="mt-4 text-sm text-muted">{t('Загружаем параметры…')}</p>}
+      {!query.isFetching && (query.isError || !valid) && <div role="alert" className="mt-4 text-sm text-danger"><p>{t('Не удалось загрузить параметры модели.')}</p><button type="button" onClick={() => void query.refetch()} className="mt-3 rounded-full bg-white border border-line px-4 py-2 text-ink">{t('Повторить')}</button></div>}
       {!query.isFetching && !query.isError && valid && <div className="mt-5 space-y-5">
-        {groups.filter(([key]) => hasValue(data[key])).map(([key, label]) => <section key={key} aria-label={label}><h3 className="text-[15px] font-medium text-ink">{label}</h3>{renderTable(data[key], key)}</section>)}
-        {Object.keys(extra).length > 0 && <details><summary className="cursor-pointer font-medium">Дополнительные параметры</summary>{renderTable(extra, '')}</details>}
-        {!Object.keys(data).some((key) => hasValue(data[key])) && <p className="text-sm text-muted">В файле нет параметров для отображения.</p>}
+        {groups.filter(([key]) => hasValue(data[key])).map(([key, label]) => <section key={key} aria-label={t(label)}><h3 className="text-[15px] font-medium text-ink">{t(label)}</h3>{renderTable(data[key], key)}</section>)}
+        {Object.keys(extra).length > 0 && <details><summary className="cursor-pointer font-medium">{t('Дополнительные параметры')}</summary>{renderTable(extra, '')}</details>}
+        {!Object.keys(data).some((key) => hasValue(data[key])) && <p className="text-sm text-muted">{t('В файле нет параметров для отображения.')}</p>}
       </div>}
     </div>
   </dialog>;

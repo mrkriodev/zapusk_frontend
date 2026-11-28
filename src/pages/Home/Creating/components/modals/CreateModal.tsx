@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import type { CreateModalProps } from "../../../../../types/UITypes/creatingTypes";
+import { t } from "../../../../../i18n/i18n";
 
 export default function CreateModal({value, onChange, onCancel, onConfirm}: CreateModalProps){
     return(
@@ -9,13 +10,13 @@ export default function CreateModal({value, onChange, onCancel, onConfirm}: Crea
             onClick={onCancel}
           />
           <div role="dialog" aria-labelledby="create-chat-title" className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-[0_24px_64px_rgb(0_0_0/0.18)]">
-            <button type="button" onClick={onCancel} aria-label="Закрыть" className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-ink-2 text-white transition-colors hover:bg-ink">
+            <button type="button" onClick={onCancel} aria-label={t("Закрыть")} className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-ink-2 text-white transition-colors hover:bg-ink">
               <X className="h-4 w-4" />
             </button>
-            <h2 id="create-chat-title" className="mb-5 text-xl font-medium tracking-tight text-ink">Новый объект</h2>
+            <h2 id="create-chat-title" className="mb-5 text-xl font-medium tracking-tight text-ink">{t("Новый объект")}</h2>
 
             <label className="mb-2 block text-sm text-muted">
-              Название объекта
+              {t("Название объекта")}
             </label>
             <input
               type="text"
@@ -23,7 +24,7 @@ export default function CreateModal({value, onChange, onCancel, onConfirm}: Crea
               autoFocus
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && onConfirm()}
-              placeholder="Введите название..."
+              placeholder={t("Введите название...")}
               className="mb-6 w-full rounded-2xl bg-white px-4 py-3 text-[15px] text-ink ring-1 ring-line placeholder:text-subtle focus:outline-none focus:ring-accent/60"
             />
 
@@ -32,13 +33,13 @@ export default function CreateModal({value, onChange, onCancel, onConfirm}: Crea
                 onClick={onCancel}
                 className="flex-1 rounded-full bg-panel-2 py-3 text-sm font-medium text-ink transition-colors hover:bg-panel-3"
               >
-                Отмена
+                {t("Отмена")}
               </button>
               <button
                 onClick={onConfirm}
                 className="flex-1 rounded-full bg-accent py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
               >
-                Создать
+                {t("Создать")}
               </button>
             </div>
           </div>

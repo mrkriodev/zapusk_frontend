@@ -1,9 +1,10 @@
 import { Download, Trash2 } from "lucide-react";
 import type { ChatItemProps } from "../../../../../types/UITypes/creatingTypes";
+import { t, getLocale } from "../../../../../i18n/i18n";
 
 export default function ChatItem({ item, activeChat, setActiveChat, onDeleteClick, onModelsClick} : ChatItemProps){
 
-  const dateNorm = new Date(item.created_at).toLocaleDateString("ru-RU", {
+  const dateNorm = new Date(item.created_at).toLocaleDateString(getLocale(), {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -31,7 +32,7 @@ export default function ChatItem({ item, activeChat, setActiveChat, onDeleteClic
               }
             }
             className="rounded-lg p-1 text-muted transition-colors hover:bg-white hover:text-accent"
-            aria-label="Показать сгенерированные модели"
+            aria-label={t("Показать сгенерированные модели")}
           >
             <Download className="h-4 w-4" strokeWidth={1.7}/>
           </button>
@@ -43,7 +44,7 @@ export default function ChatItem({ item, activeChat, setActiveChat, onDeleteClic
               }
             }
             className="rounded-lg p-1 text-muted transition-colors hover:bg-white hover:text-danger"
-            aria-label="Удалить чат"
+            aria-label={t("Удалить чат")}
           >
             <Trash2 className="h-4 w-4" strokeWidth={1.7}/>
           </button>

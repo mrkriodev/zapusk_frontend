@@ -1,5 +1,7 @@
-import { Box, CreditCard, Factory, History, Library, Settings, ShoppingCart, Store } from "lucide-react";
+import { Box, CreditCard, Factory, History, Library, ShoppingCart, Store } from "lucide-react";
 import ComingSoon from "./ComingSoon";
+
+/* Русские строки — ключи перевода; t() применяется внутри ComingSoon */
 
 export const ModelplacePage = () => (
   <ComingSoon
@@ -94,20 +96,6 @@ export const PlanPage = () => (
     features={[
       { title: "Использование", text: "Расход токенов за месяц и число личных источников." },
       { title: "Тарифы MIN, PRO и MAX", text: "Сравнение лимитов и смена тарифа." },
-    ]}
-  />
-);
-
-export const SettingsPage = () => (
-  <ComingSoon
-    title="Настройки"
-    icon={Settings}
-    heading="Настройки"
-    subtitle="Аккаунт, данные, оформление и язык"
-    features={[
-      { title: "Аккаунт и данные", text: "Почта, смена пароля, экспорт данных и выход из аккаунта." },
-      { title: "Оформление", text: "Светлая и тёмная тема." },
-      { title: "Язык", text: "Язык интерфейса." },
     ]}
   />
 );

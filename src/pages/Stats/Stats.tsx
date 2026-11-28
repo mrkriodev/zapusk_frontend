@@ -4,6 +4,7 @@ import { BookMarked, Brain, ChevronDown, FolderTree, Plus, ServerOff, Sigma, Way
 import { Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import KnowledgeChat from './KnowledgeChat';
+import { getLocale, t } from '../../i18n/i18n';
 
 /* Актуальные данные векторной базы (статичные, отдельного API статистики нет) */
 const collections = [
@@ -58,7 +59,7 @@ const metrics: Metric[] = [
   },
 ];
 
-const fmt = (value: number) => value.toLocaleString('ru-RU');
+const fmt = (value: number) => value.toLocaleString(getLocale());
 
 function NoBackend({ text, className = '' }: { text: string; className?: string }) {
   return (
@@ -86,7 +87,7 @@ function InfoTip({ info }: { info: Metric['info'] }) {
     <div ref={ref} className="absolute right-3 top-3" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <button
         type="button"
-        aria-label="Что означает показатель"
+        aria-label={t("Что означает показатель")}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
         className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-white transition-colors hover:bg-ink-2"
@@ -95,11 +96,11 @@ function InfoTip({ info }: { info: Metric['info'] }) {
       </button>
       {open && (
         <div role="tooltip" className="absolute right-0 top-7 z-30 w-72 rounded-2xl bg-white p-4 text-[13px] leading-snug shadow-[0_12px_40px_rgb(0_0_0/0.14)] ring-1 ring-line">
-          <p className="text-ink">{info.what}</p>
-          <p className="mt-3 font-medium text-ink">Как считается</p>
-          <p className="text-muted">{info.how}</p>
-          <p className="mt-3 font-medium text-ink">Как читать</p>
-          <p className="text-muted">{info.read}</p>
+          <p className="text-ink">{t(info.what)}</p>
+          <p className="mt-3 font-medium text-ink">{t("Как считается")}</p>
+          <p className="text-muted">{t(info.how)}</p>
+          <p className="mt-3 font-medium text-ink">{t("Как читать")}</p>
+          <p className="text-muted">{t(info.read)}</p>
         </div>
       )}
     </div>
@@ -131,11 +132,11 @@ function GraphSkeleton() {
 export default function Stats() {
   return (
     <Layout
-      title="База знаний"
+      title={t("База знаний")}
       actions={
         <Link to="/account/knowledge" className="flex shrink-0 items-center gap-1.5 rounded-full bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent-hover">
           <Plus className="h-4 w-4" strokeWidth={1.8} />
-          <span className="hidden sm:inline">Создать своё ядро</span>
+          <span className="hidden sm:inline">{t("Создать своё ядро")}</span>
         </Link>
       }
     >
@@ -143,25 +144,25 @@ export default function Stats() {
         <div className="mx-auto max-w-[1136px]">
           {/* Заголовок и вопрос ИИ-инженеру */}
           <section className="pb-12 pt-6 text-center sm:pt-10">
-            <h1 className="text-[28px] font-medium leading-tight tracking-tight text-ink sm:text-[40px]">Инженерия, основанная на знаниях</h1>
-            <p className="mt-2 text-[15px] text-muted sm:text-lg">Связанное ядро законов, материалов и инженерных знаний</p>
+            <h1 className="text-[28px] font-medium leading-tight tracking-tight text-ink sm:text-[40px]">{t("Инженерия, основанная на знаниях")}</h1>
+            <p className="mt-2 text-[15px] text-muted sm:text-lg">{t("Связанное ядро законов, материалов и инженерных знаний")}</p>
 
             <KnowledgeChat />
           </section>
 
           {/* Показатели */}
           <section>
-            <h2 className="mb-3 text-lg font-medium tracking-tight text-ink sm:text-xl">Зрелость платформы</h2>
+            <h2 className="mb-3 text-lg font-medium tracking-tight text-ink sm:text-xl">{t("Зрелость платформы")}</h2>
             <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
               {metrics.map(({ icon: Icon, label, value, sub, info }) => (
                 <div key={label} className="relative rounded-2xl bg-panel p-4">
                   <InfoTip info={info} />
                   <div className="flex min-h-10 items-center gap-2 pr-6 text-[13px] text-ink sm:gap-2.5 sm:text-sm">
                     <Icon className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" strokeWidth={1.7} />
-                    <span className="min-w-0 leading-tight">{label}</span>
+                    <span className="min-w-0 leading-tight">{t(label)}</span>
                   </div>
                   <p className="mt-4 text-[22px] font-semibold tracking-tight text-ink sm:text-[26px]">{fmt(value)}</p>
-                  <p className="mt-0.5 text-xs leading-snug text-muted">{sub}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-muted">{t(sub)}</p>
                 </div>
               ))}
             </div>
@@ -169,16 +170,16 @@ export default function Stats() {
 
           {/* Знания по дисциплинам */}
           <section className="mt-12">
-            <h2 className="mb-3 text-lg font-medium tracking-tight text-ink sm:text-xl">Знания по дисциплинам</h2>
+            <h2 className="mb-3 text-lg font-medium tracking-tight text-ink sm:text-xl">{t("Знания по дисциплинам")}</h2>
             <div className="hidden overflow-hidden rounded-2xl bg-panel sm:block">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-panel-2 text-left text-xs text-ink-2">
-                    <th className="px-4 py-4 font-normal">Коллекция</th>
-                    <th className="px-4 py-4 font-normal">Проиндексировано чанков</th>
-                    <th className="px-4 py-4 font-normal">С LaTeX</th>
-                    <th className="px-4 py-4 font-normal">PDF-источников</th>
-                    <th className="w-[30%] px-4 py-4"><span className="sr-only">Доля</span></th>
+                    <th className="px-4 py-4 font-normal">{t("Коллекция")}</th>
+                    <th className="px-4 py-4 font-normal">{t("Проиндексировано чанков")}</th>
+                    <th className="px-4 py-4 font-normal">{t("С LaTeX")}</th>
+                    <th className="px-4 py-4 font-normal">{t("PDF-источников")}</th>
+                    <th className="w-[30%] px-4 py-4"><span className="sr-only">{t("Доля")}</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -186,7 +187,7 @@ export default function Stats() {
                     const share = Math.round((collection.points / TOTAL_POINTS) * 100);
                     return (
                       <tr key={collection.name} className="border-t border-line first:border-t-0">
-                        <td className="px-4 py-4 font-medium text-ink">{collection.name}</td>
+                        <td className="px-4 py-4 font-medium text-ink">{t(collection.name)}</td>
                         <td className="px-4 py-4 tabular-nums text-ink">{fmt(collection.points)}</td>
                         <td className="px-4 py-4 tabular-nums text-ink">{fmt(collection.latex)}</td>
                         <td className="px-4 py-4 tabular-nums text-ink">{fmt(collection.pdfs)}</td>
@@ -211,13 +212,13 @@ export default function Stats() {
                 return (
                   <div key={collection.name} className="space-y-3 p-4">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-ink">{collection.name}</span>
+                      <span className="text-sm font-medium text-ink">{t(collection.name)}</span>
                       <span className="text-sm tabular-nums text-ink">{share}%</span>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent" style={{ width: `${share}%` }} /></div>
                     <dl className="grid grid-cols-3 gap-2 text-xs">
-                      <div><dt className="text-muted">Чанков</dt><dd className="tabular-nums text-ink">{fmt(collection.points)}</dd></div>
-                      <div><dt className="text-muted">С LaTeX</dt><dd className="tabular-nums text-ink">{fmt(collection.latex)}</dd></div>
+                      <div><dt className="text-muted">{t("Чанков")}</dt><dd className="tabular-nums text-ink">{fmt(collection.points)}</dd></div>
+                      <div><dt className="text-muted">{t("С LaTeX")}</dt><dd className="tabular-nums text-ink">{fmt(collection.latex)}</dd></div>
                       <div><dt className="text-muted">PDF</dt><dd className="tabular-nums text-ink">{fmt(collection.pdfs)}</dd></div>
                     </dl>
                   </div>
@@ -229,10 +230,10 @@ export default function Stats() {
           {/* Граф концептов */}
           <section className="mt-12">
             <div className="mb-3 flex flex-wrap items-center gap-3 sm:gap-4">
-              <h2 className="text-lg font-medium tracking-tight text-ink sm:text-xl">Выберите концепт, чтобы изучить его роль</h2>
-              <button type="button" disabled title="Backend API графа знаний пока нет" className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm text-muted ring-1 ring-line">
+              <h2 className="text-lg font-medium tracking-tight text-ink sm:text-xl">{t("Выберите концепт, чтобы изучить его роль")}</h2>
+              <button type="button" disabled title={t("Backend API графа знаний пока нет")} className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm text-muted ring-1 ring-line">
                 <Brain className="h-4 w-4" strokeWidth={1.7} />
-                Изделие не выбрано
+                {t("Изделие не выбрано")}
                 <ChevronDown className="ml-4 h-4 w-4" strokeWidth={1.7} />
               </button>
             </div>
@@ -242,27 +243,27 @@ export default function Stats() {
                 <GraphSkeleton />
                 <div className="absolute inset-0 flex items-center justify-center p-6">
                   <div className="max-w-sm rounded-2xl bg-white/90 p-4 text-center shadow-sm ring-1 ring-line backdrop-blur-sm">
-                    <p className="font-medium text-ink">Граф знаний недоступен</p>
-                    <NoBackend className="mt-1 justify-center text-left" text="Backend API графа концептов пока нет. Связи между законами, материалами и расчётами появятся здесь." />
+                    <p className="font-medium text-ink">{t("Граф знаний недоступен")}</p>
+                    <NoBackend className="mt-1 justify-center text-left" text={t("Backend API графа концептов пока нет. Связи между законами, материалами и расчётами появятся здесь.")} />
                   </div>
                 </div>
                 <div className="absolute bottom-4 left-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-line-strong" />Инженерные знания</span>
-                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-accent" />Выбранные связи</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-line-strong" />{t("Инженерные знания")}</span>
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-accent" />{t("Выбранные связи")}</span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-5">
                 <div className="flex-1 rounded-2xl bg-panel p-4">
-                  <p className="text-2xl font-semibold tracking-tight text-subtle">Концепт</p>
-                  <p className="mt-1 text-sm text-muted">Роль в расчёте</p>
-                  <NoBackend className="mt-4" text="Нет данных: backend API графа концептов пока нет." />
+                  <p className="text-2xl font-semibold tracking-tight text-subtle">{t("Концепт")}</p>
+                  <p className="mt-1 text-sm text-muted">{t("Роль в расчёте")}</p>
+                  <NoBackend className="mt-4" text={t("Нет данных: backend API графа концептов пока нет.")} />
                   <div className="mt-4 border-t border-line pt-3">
-                    <p className="text-sm text-muted">Используется для</p>
+                    <p className="text-sm text-muted">{t("Используется для")}</p>
                     <p className="mt-1 text-sm text-subtle">—</p>
                   </div>
                   <div className="mt-4 border-t border-line pt-3">
-                    <p className="text-sm text-muted">Связанные концепты</p>
+                    <p className="text-sm text-muted">{t("Связанные концепты")}</p>
                     <div className="mt-2 flex gap-2">
                       {[0, 1, 2].map((item) => <span key={item} className="h-8 w-20 rounded-lg bg-panel-3/80" />)}
                     </div>
@@ -270,7 +271,7 @@ export default function Stats() {
                 </div>
                 <Link to="/account/knowledge" className="flex items-center justify-center gap-2 rounded-full bg-accent px-4 py-3 text-[15px] font-medium text-white transition-colors hover:bg-accent-hover">
                   <Plus className="h-[18px] w-[18px]" strokeWidth={1.8} />
-                  Создать своё ядро
+                  {t("Создать своё ядро")}
                 </Link>
               </div>
             </div>

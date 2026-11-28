@@ -7,6 +7,7 @@ import {
 import type { DialogChatOut, DialogChatRequest, DialogDraft, KnowledgeSource } from '../../../../types/apiTypes/DialogTypes';
 import type { Message } from '../../../../types/apiTypes/MessageTypes';
 import { createUUID } from '../../../../utils/uuid';
+import { t } from "../../../../i18n/i18n";
 
 interface Turn {
   conversationId: string;
@@ -30,7 +31,7 @@ function errorMessage(error: unknown) {
       if (data.detail && typeof data.detail === 'object' && 'message' in data.detail && typeof data.detail.message === 'string') return data.detail.message;
     }
   }
-  return 'Не удалось получить ответ. Повтор запроса сохранит исходные данные.';
+  return t('Не удалось получить ответ. Повтор запроса сохранит исходные данные.');
 }
 function staleDraft(error: unknown): DialogDraft | null {
   if (!error || typeof error !== 'object' || !('status' in error) || error.status !== 409 || !('data' in error)) return null;
@@ -79,10 +80,10 @@ export function useConversationChat(conversationId: string | null, onCadJob: (id
       const nextId = generation?.active_job_id;
       if (nextId && nextId !== completedId) beginJob(nextId, owner, generation?.active_draft_revision);
       setWaiting((ids) => generation?.pending ? [...new Set([...ids, owner])] : ids.filter((id) => id !== owner));
-      setNotices((values) => ({ ...values, [owner]: generation?.pending ? 'Следующая сборка ожидает завершения текущей.' : '' }));
+      setNotices((values) => ({ ...values, [owner]: generation?.pending ? t('Следующая сборка ожидает завершения текущей.') : '' }));
     } catch {
       setWaiting((ids) => [...new Set([...ids, owner])]);
-      setNotices((values) => ({ ...values, [owner]: 'Не удалось обновить очередь сборки. Проверяем состояние…' }));
+      setNotices((values) => ({ ...values, [owner]: t('Не удалось обновить очередь сборки. Проверяем состояние…') }));
     }
   }, [getConversation, beginJob]);
 
@@ -123,10 +124,10 @@ export function useConversationChat(conversationId: string | null, onCadJob: (id
       }
       if (response.action === 'generation_started') {
         if (response.generation.active_job_id) beginJob(response.generation.active_job_id, turn.conversationId, response.generation.active_draft_revision);
-        else setNotices((values) => ({ ...values, [turn.conversationId]: 'Сервер не вернул ID CAD-задачи. Генерация не подтверждена.' }));
+        else setNotices((values) => ({ ...values, [turn.conversationId]: t('Сервер не вернул ID CAD-задачи. Генерация не подтверждена.') }));
       }
       if (response.action === 'generation_pending') {
-        setNotices((values) => ({ ...values, [turn.conversationId]: 'Следующая сборка ожидает завершения текущей.' }));
+        setNotices((values) => ({ ...values, [turn.conversationId]: t('Следующая сборка ожидает завершения текущей.') }));
         if (response.generation.active_job_id) beginJob(response.generation.active_job_id, turn.conversationId, response.generation.active_draft_revision);
         else setWaiting((ids) => [...new Set([...ids, turn.conversationId])]);
       }
@@ -134,7 +135,7 @@ export function useConversationChat(conversationId: string | null, onCadJob: (id
       const draft = staleDraft(error);
       const currentVisit = visit.current.conversationId === turn.conversationId && visit.current.token === turn.visit;
       if (draft) {
-        const message = 'Параметры изменились. Проверьте актуальную сводку и подтвердите её заново.';
+        const message = t('Параметры изменились. Проверьте актуальную сводку и подтвердите её заново.');
         if (currentVisit) setPrompt({ conversationId: turn.conversationId, draft: structuredClone(draft), notice: message });
         else setNotices((values) => ({ ...values, [turn.conversationId]: message }));
       } else {

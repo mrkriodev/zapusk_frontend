@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { DialogDraft } from "../../../../../types/apiTypes/DialogTypes";
+import { t } from "../../../../../i18n/i18n";
 
 type GenerateModalProps = {
   isSubmitting: boolean;
@@ -49,7 +50,7 @@ export default function GenerateModal({ isSubmitting, error, draft, notice, retr
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <h2 id="generate-modal-title" className="min-w-0 flex-1 text-[15px] font-medium leading-snug">
-          Вы точно хотите запустить генерацию модели?
+          {t("Вы точно хотите запустить генерацию модели?")}
         </h2>
         <div className="flex shrink-0 gap-2">
           <button
@@ -58,7 +59,7 @@ export default function GenerateModal({ isSubmitting, error, draft, notice, retr
             disabled={isSubmitting}
             className="flex-1 rounded-full bg-panel-2 px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-panel-3 focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50 sm:flex-none"
           >
-            Отмена
+            {t("Отмена")}
           </button>
           <button
             type="button"
@@ -66,16 +67,16 @@ export default function GenerateModal({ isSubmitting, error, draft, notice, retr
             disabled={isSubmitting || !canConfirm}
             className="flex-1 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-50 sm:flex-none"
           >
-            {isSubmitting ? "Запуск…" : retryLabel ? "Повторить" : "Сгенерировать"}
+            {isSubmitting ? t("Запуск…") : retryLabel ? t("Повторить") : t("Сгенерировать")}
           </button>
         </div>
       </div>
       <div className="thin-scroll mt-3 max-h-[min(32dvh,14rem)] overflow-y-auto rounded-xl bg-panel p-3 text-[13px]">
-        <p className="mb-2 text-xs text-muted">Ревизия {draft.revision}</p>
+        <p className="mb-2 text-xs text-muted">{t("Ревизия {revision}", { revision: draft.revision })}</p>
         <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2">
-          {(draft.summary ?? []).map((item) => <div key={item.key} className="flex flex-wrap justify-between gap-x-2"><dt className="text-muted">{item.label}</dt><dd className="break-words font-medium">{typeof item.value === 'boolean' ? item.value ? 'Да' : 'Нет' : item.value}{item.unit ? ` ${item.unit}` : ''}</dd></div>)}
+          {(draft.summary ?? []).map((item) => <div key={item.key} className="flex flex-wrap justify-between gap-x-2"><dt className="text-muted">{item.label}</dt><dd className="break-words font-medium">{typeof item.value === 'boolean' ? item.value ? t('Да') : t('Нет') : item.value}{item.unit ? ` ${item.unit}` : ''}</dd></div>)}
         </dl>
-        {draft.missing_inputs.length > 0 && <p className="mt-2 text-warning">Нужно уточнить: {draft.missing_inputs.join(', ')}</p>}
+        {draft.missing_inputs.length > 0 && <p className="mt-2 text-warning">{t('Нужно уточнить: {items}', { items: draft.missing_inputs.join(', ') })}</p>}
       </div>
       {notice && <p role="status" className="mt-2 text-xs text-warning">{notice}</p>}
       {error && <p id="generate-modal-error" role="alert" className="mt-2 text-sm text-danger">{error}</p>}

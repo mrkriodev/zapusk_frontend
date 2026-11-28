@@ -46,6 +46,7 @@ import CadReportModal from "./components/cad/CadReportModal";
 import ModelParamsViewer from "./components/cad/ModelParamsViewer";
 import { cadKey, isCadState, mergeCadVersions } from "./components/cad/cadPresentation";
 import type { CadPresentation } from "./components/cad/cadPresentation";
+import { t } from "../../../i18n/i18n";
 
 
 export default function Creating() {
@@ -166,7 +167,7 @@ export default function Creating() {
       setJobFailure({
         conversationId: activeJob.conversationId,
         message:
-          "Наблюдение за CAD приостановлено по времени. Обновите статус той же задачи.",
+          t("Наблюдение за CAD приостановлено по времени. Обновите статус той же задачи."),
       });
       setActiveJob({ ...activeJob, paused: true });
     }, JOB_POLL_TIMEOUT_MS);
@@ -185,7 +186,7 @@ export default function Creating() {
       setJobFailure({
         conversationId: activeJob.conversationId,
         message:
-          "Не удалось получить статус CAD. Можно повторить чтение этой задачи.",
+          t("Не удалось получить статус CAD. Можно повторить чтение этой задачи."),
       });
       setActiveJob({ ...activeJob, paused: true });
     }, 0);
@@ -201,7 +202,7 @@ export default function Creating() {
       const completionTimeoutId = window.setTimeout(() => {
         const cad = jobData.result?.cad_state;
         if (jobData.kind === 'fem' || jobData.conversation_id !== activeJob.conversationId || !isCadState(cad, activeJob.conversationId)) {
-          setJobFailure({ conversationId: activeJob.conversationId, message: 'Задача завершена, но сервер не вернул корректный CAD-результат. Обновите ответ задачи.' });
+          setJobFailure({ conversationId: activeJob.conversationId, message: t('Задача завершена, но сервер не вернул корректный CAD-результат. Обновите ответ задачи.') });
           setActiveJob({ ...activeJob, paused: true });
           return;
         }
@@ -236,7 +237,7 @@ export default function Creating() {
           conversationId: activeJob.conversationId,
           message:
             jobData.error ??
-            "Во время генерации произошла ошибка. Уточните запрос и попробуйте снова.",
+            t("Во время генерации произошла ошибка. Уточните запрос и попробуйте снова."),
         });
         setActiveJob(null);
         refreshCompletedConversation(activeJob.conversationId);
@@ -275,7 +276,7 @@ export default function Creating() {
   const handleCreateChat = async () => {
     try {
       const newConversation = await createConversation({
-        title: newChatName.trim() || "Новый объект",
+        title: newChatName.trim() || t("Новый объект"),
       }).unwrap();
 
       dialog.hideForNavigation();
@@ -344,7 +345,7 @@ export default function Creating() {
   const optimisticMessage = dialog.optimisticMessage;
 
   const showEmptyChatsState = !conversationsLoading && !conversationsError && !hasChats; // флаг отсутствия чатов
-  const inputPlaceholder = isGeneratingModel ? `Идет генерация модели${jobPercent && !activeJob?.paused ? ` · ${jobPercent.estimated && jobPercent.value > 0 ? "≈" : ""}${jobPercent.value}%` : ""}` : "Опишите нужную вам деталь";
+  const inputPlaceholder = isGeneratingModel ? `${t("Идет генерация модели")}${jobPercent && !activeJob?.paused ? ` · ${jobPercent.estimated && jobPercent.value > 0 ? "≈" : ""}${jobPercent.value}%` : ""}` : t("Опишите нужную вам деталь");
 
   const saveBlob = (blob: Blob, fileName: string) => {
     const fileUrl = window.URL.createObjectURL(blob);
@@ -377,7 +378,7 @@ export default function Creating() {
       setJobFailure(null);
       setActiveJob((current) => current?.jobId === id ? { ...current, paused: false } : current);
     } catch {
-      setJobFailure({ conversationId: activeJob.conversationId, message: 'Не удалось обновить CAD-задачу. Повторите чтение, когда восстановится связь.' });
+      setJobFailure({ conversationId: activeJob.conversationId, message: t('Не удалось обновить CAD-задачу. Повторите чтение, когда восстановится связь.') });
     } finally { setReadingCad(false); }
   };
 
@@ -482,8 +483,8 @@ export default function Creating() {
 
   const chatsSection = (
     <ul className="space-y-0.5">
-      {conversationsLoading && <li className="px-2.5 py-1.5 text-[13px] text-muted">Загрузка чатов...</li>}
-      {conversationsError && <li className="px-2.5 py-1.5 text-[13px] text-danger">Ошибка загрузки чатов</li>}
+      {conversationsLoading && <li className="px-2.5 py-1.5 text-[13px] text-muted">{t("Загрузка чатов...")}</li>}
+      {conversationsError && <li className="px-2.5 py-1.5 text-[13px] text-danger">{t("Ошибка загрузки чатов")}</li>}
       {chats.map((item) => (
         <ChatItem
           key={item.id}
@@ -499,7 +500,7 @@ export default function Creating() {
 
   return (
     <Layout
-      title={activeChatTitle || "Лаборатория"}
+      title={activeChatTitle || t("Лаборатория")}
       actions={activeChat && currentCad ? <ModelActions /> : undefined}
       onNewChat={() => setIsModalCreate(true)}
       chatsSection={chatsSection}
@@ -508,12 +509,12 @@ export default function Creating() {
     >
       {showEmptyChatsState ? (
         <div className="flex flex-1 flex-col items-center justify-center px-6 pb-24 text-center">
-          <h1 className="text-3xl font-medium tracking-tight text-ink sm:text-[44px] sm:leading-[1.15]">Дизайн аэрокосмических деталей</h1>
-          <p className="mt-3 text-base text-muted sm:text-lg">Опишите деталь и получите готовый STL-файл</p>
-          <p className="mt-8 max-w-md text-sm leading-relaxed text-ink-2">У вас пока нет чатов, создайте новый и начните генерировать!</p>
+          <h1 className="text-3xl font-medium tracking-tight text-ink sm:text-[44px] sm:leading-[1.15]">{t("Дизайн аэрокосмических деталей")}</h1>
+          <p className="mt-3 text-base text-muted sm:text-lg">{t("Опишите деталь и получите готовый STL-файл")}</p>
+          <p className="mt-8 max-w-md text-sm leading-relaxed text-ink-2">{t("У вас пока нет чатов, создайте новый и начните генерировать!")}</p>
           <button type="button" onClick={() => setIsModalCreate(true)} className="mt-5 flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover">
             <Plus className="h-4 w-4" />
-            Новый объект
+            {t("Новый объект")}
           </button>
         </div>
       ) : (
@@ -525,8 +526,8 @@ export default function Creating() {
           }} className={`thin-scroll flex min-h-0 flex-1 flex-col overflow-y-auto pb-4 pt-2 [&>*]:shrink-0 ${centered}`}>
             {messages.length === 0 && !currentCad && <>
               <li className="mb-8 mt-4 text-center sm:mt-10">
-                <h1 className="text-[28px] font-medium leading-tight tracking-tight text-ink sm:text-[44px]">Дизайн аэрокосмических деталей</h1>
-                <p className="mt-2 text-[15px] text-muted sm:text-lg">Опишите деталь и получите готовый STL-файл</p>
+                <h1 className="text-[28px] font-medium leading-tight tracking-tight text-ink sm:text-[44px]">{t("Дизайн аэрокосмических деталей")}</h1>
+                <p className="mt-2 text-[15px] text-muted sm:text-lg">{t("Опишите деталь и получите готовый STL-файл")}</p>
               </li>
               <CatalogWelcome
                 products={capabilities.data?.products} product={selection.product}
@@ -550,7 +551,7 @@ export default function Creating() {
             {dialog.failures.filter(({ turn }) => turn.request.request_id !== dialog.prompt?.requestId).map(({ turn, message, retryable }) => (
               <li key={turn.request.request_id} role="alert" className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 <p>{message}</p>
-                {retryable && <button type="button" disabled={isInputBusy} onClick={() => dialog.retry(turn.request.request_id)} className="mt-2 rounded-full bg-white px-4 py-1.5 text-ink ring-1 ring-red-200 transition-colors hover:bg-red-100 disabled:opacity-40">Повторить</button>}
+                {retryable && <button type="button" disabled={isInputBusy} onClick={() => dialog.retry(turn.request.request_id)} className="mt-2 rounded-full bg-white px-4 py-1.5 text-ink ring-1 ring-red-200 transition-colors hover:bg-red-100 disabled:opacity-40">{t("Повторить")}</button>}
               </li>
             ))}
 

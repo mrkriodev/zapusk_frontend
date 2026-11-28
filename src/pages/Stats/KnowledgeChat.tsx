@@ -4,6 +4,7 @@ import { ArrowUp, BookOpen, ChevronDown, CornerDownLeft, FileSearch, Lightbulb, 
 import { RAG_TIMEOUT_MS, useAskRagMutation } from '../../api/repository/RagApi';
 import type { RagDomain, RagKnowledgeStatus, RagSource } from '../../types/apiTypes/RagTypes';
 import { createUUID } from '../../utils/uuid';
+import { t } from '../../i18n/i18n';
 
 type ChatMessage =
   | { id: string; role: 'user'; text: string; domain: RagDomain }
@@ -50,10 +51,10 @@ function loadHistory(): ChatMessage[] {
 
 function errorText(error: unknown): string {
   const status = (error as { status?: unknown } | undefined)?.status;
-  if (status === 'TIMEOUT_ERROR') return `Ответ не получен за ${RAG_TIMEOUT_MS / 1000} секунд. Попробуйте ещё раз или уточните вопрос.`;
-  if (status === 'FETCH_ERROR') return 'Нет связи с сервером. Проверьте подключение и попробуйте ещё раз.';
-  if (typeof status === 'number') return `Сервер вернул ошибку ${status}. Попробуйте ещё раз.`;
-  return 'Не удалось получить ответ. Попробуйте ещё раз.';
+  if (status === 'TIMEOUT_ERROR') return t('Ответ не получен за {sec} секунд. Попробуйте ещё раз или уточните вопрос.', { sec: RAG_TIMEOUT_MS / 1000 });
+  if (status === 'FETCH_ERROR') return t('Нет связи с сервером. Проверьте подключение и попробуйте ещё раз.');
+  if (typeof status === 'number') return t('Сервер вернул ошибку {status}. Попробуйте ещё раз.', { status });
+  return t('Не удалось получить ответ. Попробуйте ещё раз.');
 }
 
 function Sources({ sources }: { sources: RagSource[] }) {
@@ -61,7 +62,7 @@ function Sources({ sources }: { sources: RagSource[] }) {
     <details className="group mt-3 rounded-2xl bg-panel px-4 py-3 text-sm">
       <summary className="flex cursor-pointer list-none items-center gap-2 font-medium text-ink [&::-webkit-details-marker]:hidden">
         <BookOpen className="h-4 w-4 shrink-0" strokeWidth={1.7} />
-        Источники из базы знаний ({sources.length})
+        {t('Источники из базы знаний ({count})', { count: sources.length })}
         <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" strokeWidth={1.7} />
       </summary>
       <ol className="mt-3 space-y-3">
@@ -73,7 +74,7 @@ function Sources({ sources }: { sources: RagSource[] }) {
             </p>
             {(source.chapter || source.page != null) && (
               <p className="mt-0.5 text-xs text-muted">
-                {[source.chapter, source.page != null ? `стр. ${source.page}` : null].filter(Boolean).join(' · ')}
+                {[source.chapter, source.page != null ? t('стр. {page}', { page: source.page }) : null].filter(Boolean).join(' · ')}
               </p>
             )}
             {source.excerpt && (
@@ -96,12 +97,12 @@ function Pending({ elapsed }: { elapsed: number }) {
         return (
           <p key={label} className={`flex items-center gap-2 text-sm ${active ? 'text-ink-2' : 'text-muted'}`}>
             <Icon className="h-4 w-4 shrink-0" strokeWidth={1.7} />
-            <span className={active ? 'animate-pulse' : ''}>{label}{active ? '…' : ''}</span>
+            <span className={active ? 'animate-pulse' : ''}>{t(label)}{active ? '…' : ''}</span>
           </p>
         );
       })}
       <p className="pl-6 text-xs text-subtle">
-        {elapsed} с · ответ обычно занимает до 2 минут
+        {t('{sec} с · ответ обычно занимает до 2 минут', { sec: elapsed })}
       </p>
     </div>
   );
@@ -174,7 +175,7 @@ export default function KnowledgeChat() {
   };
 
   const hasChat = messages.length > 0 || isLoading;
-  const domainLabel = (id: RagDomain) => domains.find((item) => item.id === id)?.label;
+  const domainLabel = (id: RagDomain) => { const label = domains.find((item) => item.id === id)?.label; return label ? t(label) : undefined; };
 
   return (
     <div className="mx-auto mt-10 max-w-[800px] text-left">
@@ -200,7 +201,7 @@ export default function KnowledgeChat() {
                       className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-medium text-ink ring-1 ring-line transition-colors hover:bg-panel"
                     >
                       <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.8} />
-                      Повторить
+                      {t('Повторить')}
                     </button>
                   </div>
                 );
@@ -209,7 +210,7 @@ export default function KnowledgeChat() {
               return (
                 <div key={message.id} className="max-w-full sm:max-w-[85%]">
                   <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-ink">{message.text}</p>
-                  {note && <p className="mt-2 text-xs text-muted">{note}</p>}
+                  {note && <p className="mt-2 text-xs text-muted">{t(note)}</p>}
                   {message.sources.length > 0 && <Sources sources={message.sources} />}
                 </div>
               );
@@ -219,7 +220,7 @@ export default function KnowledgeChat() {
           <div className="mt-2 flex justify-end">
             <button type="button" onClick={clear} className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-muted transition-colors hover:bg-panel hover:text-ink">
               <Trash2 className="h-3.5 w-3.5" strokeWidth={1.7} />
-              Очистить диалог
+              {t('Очистить диалог')}
             </button>
           </div>
         </div>
@@ -229,11 +230,11 @@ export default function KnowledgeChat() {
             <button
               key={item.text}
               type="button"
-              onClick={() => { setDomain(item.domain); void send(item.text, item.domain); }}
+              onClick={() => { setDomain(item.domain); void send(t(item.text), item.domain); }}
               className="flex items-center gap-2 rounded-lg bg-panel-3 px-3 py-1.5 text-left text-[13px] text-ink transition-colors hover:bg-line-strong/60 sm:text-sm"
             >
               <CornerDownLeft className="h-4 w-4 shrink-0" strokeWidth={1.7} />
-              {item.text}
+              {t(item.text)}
             </button>
           ))}
         </div>
@@ -243,27 +244,27 @@ export default function KnowledgeChat() {
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="Спросите ИИ-инженера…"
-          aria-label="Вопрос ИИ-инженеру"
+          placeholder={t("Спросите ИИ-инженера…")}
+          aria-label={t("Вопрос ИИ-инженеру")}
           className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-subtle"
         />
         <label className="relative hidden shrink-0 sm:block">
-          <span className="sr-only">Раздел базы знаний</span>
+          <span className="sr-only">{t("Раздел базы знаний")}</span>
           <select
             value={domain}
             onChange={(event) => setDomain(event.target.value as RagDomain)}
             className="appearance-none rounded-full bg-panel py-1.5 pl-3 pr-7 text-xs text-ink-2 outline-none transition-colors hover:bg-panel-3 focus-visible:ring-2 focus-visible:ring-accent"
           >
-            {domains.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+            {domains.map((item) => <option key={item.id} value={item.id}>{t(item.label)}</option>)}
           </select>
           <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" strokeWidth={1.8} />
         </label>
-        <button type="submit" disabled={!question.trim() || isLoading} aria-label="Спросить" className="ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent-hover disabled:bg-line-strong">
+        <button type="submit" disabled={!question.trim() || isLoading} aria-label={t("Спросить")} className="ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent-hover disabled:bg-line-strong">
           <ArrowUp className="h-[18px] w-[18px]" strokeWidth={2} />
         </button>
       </form>
       <p className="mt-3 text-center text-xs text-muted">
-        Спросите своими словами. Поиск идёт по документам, формулам и концептам базы знаний.
+        {t('Спросите своими словами. Поиск идёт по документам, формулам и концептам базы знаний.')}
       </p>
     </div>
   );

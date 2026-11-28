@@ -7,6 +7,7 @@ import DeleteObjectModal from "./components/DeleteObjectModal";
 import { useDeleteConversationMutation, useGetConversationsQuery } from "../../api/repository/ConversationsApi";
 import { useLazyDownloadCadFileQuery } from "../../api/repository/CadApi";
 import type { Conversation } from "../../types/apiTypes/ConversationTypes";
+import { t } from "../../i18n/i18n";
 
 const saveBlob = (blob: Blob, fileName: string) => {
   const fileUrl = window.URL.createObjectURL(blob);
@@ -33,7 +34,7 @@ export default function Profile() {
   const [downloadCadFile] = useLazyDownloadCadFileQuery();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  const titleOf = (item: Conversation) => item.title?.trim() || "Без названия";
+  const titleOf = (item: Conversation) => item.title?.trim() || t("Без названия");
 
   const handleOpen = (item: Conversation) => navigate("/", { state: { chatId: item.id } });
 
@@ -58,12 +59,12 @@ export default function Profile() {
       setToDelete(null);
     } catch (error) {
       console.error("Ошибка удаления объекта:", error);
-      setDeleteError("Не удалось удалить объект. Попробуйте ещё раз.");
+      setDeleteError(t("Не удалось удалить объект. Попробуйте ещё раз."));
     }
   };
 
   return (
-    <Layout title="Профиль">
+    <Layout title={t("Профиль")}>
       <div className="thin-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-8 lg:px-6">
         <div className="mx-auto max-w-6xl">
           <section className="flex items-center gap-4 rounded-2xl bg-panel p-4 ring-1 ring-line/70 sm:gap-5 sm:p-6">
@@ -76,33 +77,33 @@ export default function Profile() {
             </div>
             <div className="text-right">
               <div className="text-2xl font-medium tracking-tight text-ink sm:text-[32px]">{isLoading ? "…" : total}</div>
-              <div className="text-xs text-muted sm:text-sm">Созданных объектов</div>
+              <div className="text-xs text-muted sm:text-sm">{t("Созданных объектов")}</div>
             </div>
           </section>
 
           <h2 className="mb-4 mt-8 text-lg font-medium tracking-tight text-ink sm:text-xl">
-            Ваши объекты
+            {t("Ваши объекты")}
           </h2>
 
-          {isLoading && <p className="text-sm text-muted">Загрузка объектов…</p>}
+          {isLoading && <p className="text-sm text-muted">{t("Загрузка объектов…")}</p>}
 
           {isError && (
             <div role="alert" className="flex items-center gap-3 rounded-2xl bg-red-50 p-4 text-sm text-danger">
-              Не удалось загрузить объекты.
-              <button type="button" onClick={() => refetch()} className="rounded-full bg-white px-3 py-1 font-medium text-ink ring-1 ring-line">Повторить</button>
+              {t("Не удалось загрузить объекты.")}
+              <button type="button" onClick={() => refetch()} className="rounded-full bg-white px-3 py-1 font-medium text-ink ring-1 ring-line">{t("Повторить")}</button>
             </div>
           )}
 
           {!isLoading && !isError && objects.length === 0 && (
             <div className="flex flex-col items-center rounded-2xl bg-panel p-8 text-center ring-1 ring-line/70">
-              <p className="text-sm text-ink-2">У вас пока нет объектов.</p>
+              <p className="text-sm text-ink-2">{t("У вас пока нет объектов.")}</p>
               <button
                 type="button"
                 onClick={() => navigate("/", { state: { openCreate: true } })}
                 className="mt-4 flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
               >
                 <Plus className="h-4 w-4" />
-                Новый объект
+                {t("Новый объект")}
               </button>
             </div>
           )}

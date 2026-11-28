@@ -1,4 +1,5 @@
 import { ArrowUp, RefreshCcw, Settings, WandSparkles } from "lucide-react";
+import { t } from "../../../../../i18n/i18n";
 
 type InputSendLineProps = {
   value: string;
@@ -42,10 +43,10 @@ export function InputSendLine({
           onClick={onAssistantSubmit}
           disabled={isAssistantDisabled}
           className={`${chip} bg-white text-ink ring-1 ring-line-strong hover:bg-panel disabled:bg-panel-2 disabled:text-subtle disabled:ring-transparent ${needsAssistantPrompt ? "animate-assistant-prompt motion-reduce:animate-none" : ""}`}
-          title="Уточнить параметры"
+          title={t("Уточнить параметры")}
         >
           <WandSparkles className="h-4 w-4 shrink-0" strokeWidth={1.7} />
-          <span>Уточнить</span>
+          <span>{t("Уточнить")}</span>
         </button>
 
         <button
@@ -53,10 +54,10 @@ export function InputSendLine({
           onClick={onOpenModelParams}
           disabled={!canViewModelParams || isInputDisabled}
           className={`${chip} bg-panel-2 text-ink-2 hover:bg-panel-3 disabled:text-subtle disabled:hover:bg-panel-2`}
-          title="Открыть параметры текущей CAD-версии"
+          title={t("Открыть параметры текущей CAD-версии")}
         >
           <Settings className="h-4 w-4 shrink-0" strokeWidth={1.7} />
-          <span>Параметры</span>
+          <span>{t("Параметры")}</span>
         </button>
 
         {showFem && <button
@@ -64,10 +65,10 @@ export function InputSendLine({
           onClick={onStartFem}
           disabled={!canStartFem}
           className={`${chip} bg-panel-2 text-ink-2 hover:bg-panel-3 disabled:text-subtle disabled:hover:bg-panel-2`}
-          title={femDisabledReason ?? "Запустить FEM текущей CAD-версии"}
+          title={femDisabledReason ?? t("Запустить FEM текущей CAD-версии")}
         >
           <RefreshCcw className="h-4 w-4 shrink-0" strokeWidth={1.7} />
-          <span>{isStartingFem ? "Запуск FEM…" : "Запустить FEM"}</span>
+          <span>{isStartingFem ? t("Запуск FEM…") : t("Запустить FEM")}</span>
         </button>}
       </div>
 
@@ -85,14 +86,14 @@ export function InputSendLine({
             }
           }}
           disabled={isInputDisabled}
-          aria-label="Описание детали"
+          aria-label={t("Описание детали")}
           className="min-w-0 flex-1 bg-transparent py-2 text-[15px] text-ink placeholder:text-subtle focus:outline-none disabled:cursor-not-allowed"
         />
         <button
           type="button"
           onClick={onAssistantSubmit}
           disabled={isAssistantDisabled}
-          aria-label="Отправить"
+          aria-label={t("Отправить")}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-line-strong"
         >
           <ArrowUp className="h-[18px] w-[18px]" strokeWidth={2.2} />

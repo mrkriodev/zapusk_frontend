@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react";
 import type { DeleteModalProps } from "../../../../../types/UITypes/creatingTypes";
+import { t } from "../../../../../i18n/i18n";
 
 export default function DeleteModal({chat, onCancel, onConfirm}: DeleteModalProps){
     return(
@@ -12,10 +13,10 @@ export default function DeleteModal({chat, onCancel, onConfirm}: DeleteModalProp
             <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-red-50">
               <Trash2 className="h-5 w-5 text-danger" strokeWidth={1.8} />
             </div>
-            <h2 id="delete-chat-title" className="mb-2 text-xl font-medium tracking-tight text-ink">Удалить чат?</h2>
+            <h2 id="delete-chat-title" className="mb-2 text-xl font-medium tracking-tight text-ink">{t("Удалить чат?")}</h2>
 
             <p className="mb-6 text-sm leading-relaxed text-muted">
-              Чат «{chat?.title}» будет удалён безвозвратно.
+              {t("Чат «{title}» будет удалён безвозвратно.", { title: chat?.title ?? "" })}
             </p>
 
             <div className="flex gap-2">
@@ -23,13 +24,13 @@ export default function DeleteModal({chat, onCancel, onConfirm}: DeleteModalProp
                 onClick={onCancel}
                 className="flex-1 rounded-full bg-panel-2 py-3 text-sm font-medium text-ink transition-colors hover:bg-panel-3"
               >
-                Отмена
+                {t("Отмена")}
               </button>
               <button
                 onClick={onConfirm}
                 className="flex-1 rounded-full bg-danger py-3 text-sm font-medium text-white transition-colors hover:bg-red-700"
               >
-                Удалить
+                {t("Удалить")}
               </button>
             </div>
           </div>

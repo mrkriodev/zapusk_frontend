@@ -3,6 +3,7 @@ import { tokenStorage } from '../../store/tokenStore';
 import type { FemCancel, FemJobAccepted, FemRun } from '../../types/apiTypes/FemTypes';
 import type { Capabilities } from '../../types/apiTypes/CapabilityTypes';
 import type { DownloadCadFileResult } from '../../types/apiTypes/CadTypes';
+import { t } from "../../i18n/i18n";
 
 export const isFemPending = (status: string) => status === 'queued' || status === 'running';
 
@@ -79,7 +80,7 @@ export async function downloadFemArtifact(id: string, format: string): Promise<D
   });
   if (!response.ok) {
     const data: unknown = await response.json().catch(() => null);
-    const detail = data && typeof data === 'object' && 'detail' in data && typeof data.detail === 'string' ? data.detail : 'Не удалось скачать файл расчёта.';
+    const detail = data && typeof data === 'object' && 'detail' in data && typeof data.detail === 'string' ? data.detail : t('Не удалось скачать файл расчёта.');
     throw new Error(detail);
   }
   const match = response.headers.get('content-disposition')?.match(/filename\*?=(?:UTF-8''|")?([^;"]+)/i);
