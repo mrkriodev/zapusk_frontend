@@ -20,7 +20,7 @@ export const ModelplacePage = () => (
 
 export const FactoryPage = () => (
   <ComingSoon
-    title="Производство"
+    title="Фабрика"
     icon={Factory}
     heading="Следующая остановка — реальный мир"
     subtitle="Настройте производство детали: от материала до доставки"

@@ -17,7 +17,7 @@ const navItems = [
   { path: "/", label: "Лаборатория", icon: Atom },
   { path: "/statistics", label: "База знаний", icon: Brain },
   { path: "/modelplace", label: "Маркетплейс", icon: Store },
-  { path: "/factory", label: "Производство", icon: Factory },
+  { path: "/factory", label: "Фабрика", icon: Factory },
 ];
 
 /** Меню раздела аккаунта (по дизайну открывается из блока профиля) */
