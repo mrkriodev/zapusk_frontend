@@ -1,8 +1,4 @@
-import {
-  FileText,
-  RefreshCcw,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ArrowUp, RefreshCcw, Settings, WandSparkles } from "lucide-react";
 
 type InputSendLineProps = {
   value: string;
@@ -37,29 +33,29 @@ export function InputSendLine({
   onStartFem,
   onOpenModelParams,
 }: InputSendLineProps) {
+  const chip = "flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed";
   return (
-    <div className="w-full shrink-0 space-y-3 border-t border-blue-400/20 bg-blue-900/20 p-4 backdrop-blur-md md:p-5">
-      <div className="flex flex-wrap gap-2">
+    <div className="w-full shrink-0 space-y-2.5">
+      <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 py-1">
         <button
           type="button"
           onClick={onAssistantSubmit}
           disabled={isAssistantDisabled}
-          className={`flex items-center gap-1.5 rounded-xl border border-purple-400/40 bg-purple-500/10 px-3 py-2 text-sm font-medium text-purple-300 transition-all hover:bg-purple-500/20 hover:text-purple-200 disabled:cursor-not-allowed disabled:opacity-40 ${needsAssistantPrompt ? "animate-assistant-prompt motion-reduce:animate-none" : ""}`}
+          className={`${chip} bg-white text-ink ring-1 ring-line-strong hover:bg-panel disabled:bg-panel-2 disabled:text-subtle disabled:ring-transparent ${needsAssistantPrompt ? "animate-assistant-prompt motion-reduce:animate-none" : ""}`}
           title="Уточнить параметры"
         >
-          <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-          <span className="hidden min-[480px]:inline">Уточнить</span>
-          <span className="min-[480px]:hidden">Параметры</span>
+          <WandSparkles className="h-4 w-4 shrink-0" strokeWidth={1.7} />
+          <span>Уточнить</span>
         </button>
 
         <button
           type="button"
           onClick={onOpenModelParams}
           disabled={!canViewModelParams || isInputDisabled}
-          className="flex items-center gap-1.5 rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-300 transition-all hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+          className={`${chip} bg-panel-2 text-ink-2 hover:bg-panel-3 disabled:text-subtle disabled:hover:bg-panel-2`}
           title="Открыть параметры текущей CAD-версии"
         >
-         <FileText className=" inline h-3.5 w-3.5" />
+          <Settings className="h-4 w-4 shrink-0" strokeWidth={1.7} />
           <span>Параметры</span>
         </button>
 
@@ -67,16 +63,15 @@ export function InputSendLine({
           type="button"
           onClick={onStartFem}
           disabled={!canStartFem}
-          className="flex items-center gap-1.5 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-300 transition-all hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+          className={`${chip} bg-panel-2 text-ink-2 hover:bg-panel-3 disabled:text-subtle disabled:hover:bg-panel-2`}
           title={femDisabledReason ?? "Запустить FEM текущей CAD-версии"}
         >
-          <RefreshCcw className="h-3.5 w-3.5 shrink-0" />
+          <RefreshCcw className="h-4 w-4 shrink-0" strokeWidth={1.7} />
           <span>{isStartingFem ? "Запуск FEM…" : "Запустить FEM"}</span>
         </button>}
-
       </div>
 
-      <div className="flex gap-2 md:gap-3">
+      <div className="flex items-center gap-2 rounded-[22px] bg-white py-1.5 pl-4 pr-1.5 ring-1 ring-line shadow-[0_1px_2px_rgb(0_0_0/0.03)] transition-shadow focus-within:ring-accent/60 focus-within:shadow-[0_0_0_4px_rgb(20_147_255/0.10)] has-[input:disabled]:bg-panel">
         <input
           type="text"
           maxLength={12000}
@@ -90,10 +85,18 @@ export function InputSendLine({
             }
           }}
           disabled={isInputDisabled}
-          className="flex-1 rounded-full border border-blue-400/30 bg-blue-800/30 px-4 py-3 text-sm text-white placeholder-blue-300/50 focus:border-blue-400/60 focus:outline-none focus:ring-2 focus:ring-blue-400/20 disabled:cursor-not-allowed disabled:opacity-50 md:px-6 md:py-4 md:text-base"
+          aria-label="Описание детали"
+          className="min-w-0 flex-1 bg-transparent py-2 text-[15px] text-ink placeholder:text-subtle focus:outline-none disabled:cursor-not-allowed"
         />
-
-
+        <button
+          type="button"
+          onClick={onAssistantSubmit}
+          disabled={isAssistantDisabled}
+          aria-label="Отправить"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-line-strong"
+        >
+          <ArrowUp className="h-[18px] w-[18px]" strokeWidth={2.2} />
+        </button>
       </div>
     </div>
   );

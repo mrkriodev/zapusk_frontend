@@ -1,4 +1,5 @@
-import { Box, User } from "lucide-react";
+import { UserRound } from "lucide-react";
+import Layout from "../../components/Layout";
 import ModelItem from "./components/ModelItem";
 
 const mockModels = [
@@ -11,44 +12,34 @@ const mockModels = [
 
 export default function Profile(){
     return(
-    <div className="h-dvh pt-16 bg-linear-to-br from-blue-950 via-indigo-950 to-blue-950 overflow-hidden">
-      
-      <div className="container mx-auto lg:px-6 lg:pt-12 lg:pb-7 px-2 pt-4 h-full flex flex-col min-h-0">
-        <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 backdrop-blur-md rounded-3xl border border-blue-400/30 lg:p-8 lg:mb-8 mb-1 p-4">
-          <div className="flex items-center gap-6">
-            <div className="bg-gradient-to-br from-blue-500 to-purple-600 lg:w-24 lg:h-24 p-2 rounded-2xl flex items-center justify-center">
-              <User className="w-12 h-12 text-white" />
+    <Layout title="Профиль">
+      <div className="thin-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-8 lg:px-6">
+        <div className="mx-auto max-w-6xl">
+          <section className="flex items-center gap-4 rounded-2xl bg-panel p-4 ring-1 ring-line/70 sm:gap-5 sm:p-6">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-ink text-white sm:h-16 sm:w-16">
+              <UserRound className="h-7 w-7" strokeWidth={1.6} />
             </div>
-            <div className="flex-1">
-              <h1 className="lg:text-3xl text-lg font-bold text-white lg:mb-2">Username</h1>
-              <p className="text-blue-300">email@gmail.com</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-lg font-medium tracking-tight text-ink sm:text-2xl">Username</h1>
+              <p className="truncate text-sm text-muted">email@gmail.com</p>
             </div>
             <div className="text-right">
-              <div className="lg:text-4xl text-xl font-bold text-white lg:mb-1 ">{mockModels.length}</div>
-              <div className="text-blue-300 lg:text-base text-sm">Созданных моделей</div>
+              <div className="text-2xl font-medium tracking-tight text-ink sm:text-[32px]">{mockModels.length}</div>
+              <div className="text-xs text-muted sm:text-sm">Созданных моделей</div>
             </div>
-          </div>
-        </div>
+          </section>
 
-
-        <div className="flex flex-col flex-1 min-h-0">
-          <h2 className="lg:text-2xl text-lg font-bold text-white lg:mb-6 mb-2 flex items-center lg:gap-3 gap-1 shrink-0">
-            <Box className="lg:w-7 lg:h-7 w-5 h-5 text-purple-400" />
-            Ваши 3D Модели
+          <h2 className="mb-4 mt-8 text-lg font-medium tracking-tight text-ink sm:text-xl">
+            Ваши 3D модели
           </h2>
-        
-        <div className="flex-1 min-h-0 overflow-y-auto  [scrollbar-width:none]                
-        [-ms-overflow-style:none]              
-        [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0 pb-3
-        ">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockModels.map((model) => (
-                  <ModelItem model={model} />
-                ))}
-            </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {mockModels.map((model) => (
+              <ModelItem key={model.id} model={model} />
+            ))}
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
     )
 }
